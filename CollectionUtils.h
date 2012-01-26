@@ -41,7 +41,8 @@ NSString* $string( const char *utf8Str );
 #define $cast(CLASSNAME,OBJ)        ((CLASSNAME*)(_cast([CLASSNAME class],(OBJ))))
 #define $castNotNil(CLASSNAME,OBJ)  ((CLASSNAME*)(_castNotNil([CLASSNAME class],(OBJ))))
 #define $castIf(CLASSNAME,OBJ)      ((CLASSNAME*)(_castIf([CLASSNAME class],(OBJ))))
-#define $castArrayOf(ITEMCLASSNAME,OBJ) _castArrayOf([ITEMCLASSNAME class],(OBJ)))
+#define $castArrayOf(ITEMCLASSNAME,OBJ) _castArrayOf([ITEMCLASSNAME class],(OBJ))
+#define $castIfArrayOf(ITEMCLASSNAME,OBJ) _castIfArrayOf([ITEMCLASSNAME class],(OBJ))
 
 void setObj( id *var, id value );
 BOOL ifSetObj( id *var, id value );
@@ -121,3 +122,4 @@ id _cast(Class,id);
 id _castNotNil(Class,id);
 id _castIf(Class,id);
 NSArray* _castArrayOf(Class,NSArray*);
+NSArray* _castIfArrayOf(Class,NSArray*);

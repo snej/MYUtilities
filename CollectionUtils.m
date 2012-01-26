@@ -130,6 +130,16 @@ NSArray* _castArrayOf(Class itemClass, NSArray *a)
     return a;
 }
 
+NSArray* _castIfArrayOf(Class itemClass, NSArray *a)
+{
+    a = $castIf(NSArray,a);
+    id item;
+    foreach( item, a )
+        if (!_castIf(itemClass,item))
+            return nil;
+    return a;
+}
+
 
 void setObj( id *var, id value )
 {
