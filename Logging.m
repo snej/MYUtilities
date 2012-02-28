@@ -49,11 +49,15 @@ static MYLoggingTo getLoggingMode( int fd )
         else
             return kLoggingToTTY;
     } else {
+#if GNUSTEP
+        return kLoggingToFile;
+#else
         char path[MAXPATHLEN];
         if( fcntl(fd, F_GETPATH, path) == 0 )
             return kLoggingToFile;
         else
             return kLoggingToOther;
+#endif
     }
 }
 

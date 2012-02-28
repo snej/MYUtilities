@@ -172,6 +172,9 @@ static void report( NSException *x ) {
 
 BOOL IsGDBAttached( void )
 {
+#ifdef GNUSTEP
+    return NO;
+#else
     // From: <http://lists.apple.com/archives/Xcode-users/2004/Feb/msg00241.html>
     int mib[4];
     size_t bufSize = 0;
@@ -188,6 +191,7 @@ BOOL IsGDBAttached( void )
         return NO;
     }
     return (kp.kp_proc.p_flag & P_TRACED) != 0;
+#endif
 }
 
 

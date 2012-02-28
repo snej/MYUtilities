@@ -91,6 +91,12 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @end
 
 
+#ifdef GNUSTEP
+#define kCFBooleanTrue  ([NSNumber numberWithBool: YES])
+#define kCFBooleanFalse ([NSNumber numberWithBool: NO])
+#endif
+
+
 
 #pragma mark -
 #pragma mark FOREACH:
