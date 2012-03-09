@@ -430,6 +430,55 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @end
 
 
+@interface MYMappedEnumerator : NSEnumerator
+{
+    NSEnumerator* _source;
+    id (^_filter)(id obj) ;
+}
+- (id) initWithEnumerator: (NSEnumerator*)enumerator filter: (id (^)(id obj))filter;
+@end
+
+@implementation MYMappedEnumerator
+
+- (id) initWithEnumerator: (NSEnumerator*)enumerator filter: (id (^)(id obj))filter {
+    self = [super init];
+    if (self) {
+        _source = [enumerator retain];
+        _filter = [filter copy];
+    }
+    return self;
+}
+
+- (void)dealloc
+{
+    [_source release];
+    [_filter release];
+    [super dealloc];
+}
+
+- (id) nextObject {
+    id obj;
+    while (nil != (obj = [_source nextObject])) {
+        id mapped = _filter(obj);
+        if (mapped)
+            return mapped;
+    }
+    return nil;
+}
+
+@end
+
+
+@implementation NSEnumerator (MYUtils)
+
+- (NSEnumerator*) my_map: (id (^)(id obj))block {
+    return [[[MYMappedEnumerator alloc] initWithEnumerator: self filter: block] autorelease];
+}
+
+@end
+
+
+
 
 #import "Test.h"
 
@@ -460,6 +509,12 @@ TestCase(CollectionUtils) {
                         @"a C string",                                  @"cstr",
                         nil];
     CAssertEqual(d,dd);
+    
+    NSEnumerator* source = [$array(@"teenage", @"mutant", @"ninja", @"turtles") objectEnumerator];
+    NSEnumerator* mapped = [source my_map: ^id(NSString* str) {
+        return [str hasPrefix: @"t"] ? [str uppercaseString] : nil;
+    }];
+    CAssertEqual(mapped.allObjects, $array(@"TEENAGE", @"TURTLES"));
 }
 
 

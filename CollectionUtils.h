@@ -78,6 +78,11 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 #endif
 @end
 
+#if NS_BLOCKS_AVAILABLE
+@interface NSEnumerator (MYUtils)
+- (NSEnumerator*) my_map: (id (^)(id obj))block;
+@end
+#endif
 
 @interface NSSet (MYUtils)
 + (NSSet*) my_unionOfSet: (NSSet*)set1 andSet: (NSSet*)set2;
