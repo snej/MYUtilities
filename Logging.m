@@ -15,6 +15,9 @@
 #include <termios.h>
 
 
+BOOL gMYWarnRaisesException;
+
+
 NSString* LOC( NSString *key )     // Localized string lookup
 {
     NSString *value = [[NSBundle mainBundle] localizedStringForKey:key value:nil table:nil];
@@ -196,6 +199,10 @@ void Warn( NSString *msg, ... )
     va_list args;
     va_start(args,msg);
     _Logv(kWarningPrefix,msg,args);
+    if (gMYWarnRaisesException)
+        [NSException raise: NSInternalInconsistencyException
+                    format: [@"Warn() was called: " stringByAppendingString: msg]
+                 arguments: args];
     va_end(args);
 }
 

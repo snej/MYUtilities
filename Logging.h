@@ -62,6 +62,8 @@ BOOL EnableLog( BOOL enable );
 #define WillLog()  _WillLogTo(nil)
 #define WillLogTo( DOMAIN )  _WillLogTo(@""#DOMAIN)
 
+/** Setting this to YES causes Warn() to raise an exception. Useful in unit tests. */
+extern BOOL gMYWarnRaisesException;
 
 // internals; don't use directly
 extern int _gShouldLog;
