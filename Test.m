@@ -17,6 +17,7 @@ BOOL gRunningTestCase;
 struct TestCaseLink *gAllTestCases;
 static int sPassed, sFailed;
 static NSMutableArray* sFailedTestNames;
+static struct TestCaseLink *sCurrentTest;
 static int sCurTestCaseExceptions;
 
 
@@ -34,65 +35,80 @@ static void RecordFailedTest( struct TestCaseLink *test ) {
 
 static BOOL RunTestCase( struct TestCaseLink *test )
 {
-    BOOL oldLogging = EnableLog(YES);
-    gRunningTestCase = YES;
-    if( test->testptr ) {
-        NSAutoreleasePool *pool = [NSAutoreleasePool new];
-        Log(@"=== Testing %s ...",test->name);
-        @try{
-            sCurTestCaseExceptions = 0;
-            MYSetExceptionReporter(&TestCaseExceptionReporter);
+    if( !test->testptr )
+        return YES;     // already ran this test
 
-            test->testptr();    //SHAZAM!
-            
-            if( sCurTestCaseExceptions == 0 ) {
-                Log(@"√√√ %s passed\n\n",test->name);
-                test->passed = YES;
-                sPassed++;
-            } else {
-                Log(@"XXX FAILED test case '%s' due to %i exception(s) already reported above",
-                    test->name,sCurTestCaseExceptions);
-                sFailed++;
-                RecordFailedTest(test);
-            }
-        }@catch( NSException *x ) {
-            if( [x.name isEqualToString: @"TestCaseSkipped"] )
-                Log(@"... skipping test %s since %@\n\n", test->name, x.reason);
-            else {
-                fflush(stderr);
-                Log(@"XXX FAILED test case '%s' due to:\nException: %@\n%@\n\n", 
-                      test->name,x,x.my_callStack);
-                sFailed++;
-                RecordFailedTest(test);
-            }
-        }@finally{
-            [pool drain];
-            test->testptr = NULL;       // prevents test from being run again
+    BOOL oldLogging = EnableLog(YES);
+    BOOL wasRunningTestCase = gRunningTestCase;
+    gRunningTestCase = YES;
+    struct TestCaseLink* prevTest = sCurrentTest;
+    sCurrentTest = test;
+
+    NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    Log(@"=== Testing %s ...",test->name);
+    @try{
+        sCurTestCaseExceptions = 0;
+        MYSetExceptionReporter(&TestCaseExceptionReporter);
+
+        test->testptr();    //SHAZAM!
+        
+        if( sCurTestCaseExceptions == 0 ) {
+            Log(@"√√√ %s passed\n\n",test->name);
+            test->passed = YES;
+            sPassed++;
+        } else {
+            Log(@"XXX FAILED test case '%s' due to %i exception(s) already reported above",
+                test->name,sCurTestCaseExceptions);
+            sFailed++;
+            RecordFailedTest(test);
         }
+    }@catch( NSException *x ) {
+        if( [x.name isEqualToString: @"TestCaseSkipped"] )
+            Log(@"... skipping test %s since %@\n\n", test->name, x.reason);
+        else {
+            fflush(stderr);
+            Log(@"XXX FAILED test case '%s' due to:\nException: %@\n%@\n\n", 
+                  test->name,x,x.my_callStack);
+            sFailed++;
+            RecordFailedTest(test);
+        }
+    }@finally{
+        [pool drain];
+        test->testptr = NULL;       // prevents test from being run again
     }
-    gRunningTestCase = NO;
+    sCurrentTest = prevTest;
+    gRunningTestCase = wasRunningTestCase;
     EnableLog(oldLogging);
     return test->passed;
 }
 
 
+static struct TestCaseLink* FindTestCaseNamed( const char *name ) {
+    for( struct TestCaseLink *test = gAllTestCases; test; test=test->next )
+        if( strcmp(name,test->name)==0 )
+            return test;
+    Log(@"... WARNING: Could not find test case named '%s'\n\n",name);
+    return NULL;
+}
+
+
 static BOOL RunTestCaseNamed( const char *name )
 {
-    for( struct TestCaseLink *test = gAllTestCases; test; test=test->next )
-        if( strcmp(name,test->name)==0 ) {
-            return RunTestCase(test);
-        }
-    Log(@"... WARNING: Could not find test case named '%s'\n\n",name);
-    return NO;
+    struct TestCaseLink* test = FindTestCaseNamed(name);
+    return test && RunTestCase(test);
 }
 
 
 void _RequireTestCase( const char *name )
 {
-    if( ! RunTestCaseNamed(name) ) {
+    struct TestCaseLink* test = FindTestCaseNamed(name);
+    if (!test || !test->testptr)
+        return;
+    if( ! RunTestCase(test) ) {
         [NSException raise: @"TestCaseSkipped" 
                     format: @"prerequisite %s failed", name];
     }
+    Log(@"=== Back to test %s ...", sCurrentTest->name);
 }
 
 
