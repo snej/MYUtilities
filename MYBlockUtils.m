@@ -27,7 +27,7 @@
 
 void MYAfterDelay( NSTimeInterval delay, void (^block)() ) {
     NSOperationQueue* queue = [NSOperationQueue currentQueue];
-    if (queue) {
+    if (queue && ![NSThread isMainThread]) {
         // Can't just call the block directly, because then it won't be running under the control
         // of the operation queue when it's called. So instead, create another block that tells
         // the queue to run the block, then run that...
@@ -61,6 +61,16 @@ void MYCancelAfterDelay( id block ) {
     [NSObject cancelPreviousPerformRequestsWithTarget: block
                                              selector: @selector(my_run_as_block)
                                                object:nil];
+}
+
+
+void MYOnThread( NSThread* thread, void (^block)()) {
+    block = [block copy];
+    [block performSelector: @selector(my_run_as_block)
+                  onThread: thread
+                withObject: block
+             waitUntilDone: NO];
+    [block release];
 }
 
 

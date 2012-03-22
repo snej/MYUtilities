@@ -18,3 +18,6 @@ id MYAfterDelayInModes( NSTimeInterval delay, NSArray* modes, void (^block)() );
 /** Cancels a prior call to MYAfterDelayInModes, before the delayed block runs.
     @param block  The return value of the MYAfterDelayInModes call that you want to cancel. */
 void MYCancelAfterDelay( id block );
+
+/** Runs the block on the given thread's runloop. */
+void MYOnThread( NSThread* thread, void (^block)());
