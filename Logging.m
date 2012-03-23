@@ -29,6 +29,9 @@ NSString* LOC( NSString *key )     // Localized string lookup
 }
 
 
+#ifndef MY_DISABLE_LOGGING
+
+
 typedef enum {
     kLoggingToOther,
     kLoggingToFile,
@@ -194,11 +197,18 @@ void _LogTo( NSString *domain, NSString *msg, ... )
 }
 
 
+#endif // MY_DISABLE_LOGGING
+
+
 void Warn( NSString *msg, ... )
 {
     va_list args;
     va_start(args,msg);
+#ifdef MY_DISABLE_LOGGING
+    NSLogv([@"WARNING: " stringByAppendingString: msg], args);
+#else
     _Logv(kWarningPrefix,msg,args);
+#endif
     if (gMYWarnRaisesException)
         [NSException raise: NSInternalInconsistencyException
                     format: [@"Warn() was called: " stringByAppendingString: msg]

@@ -59,12 +59,12 @@ void _RequireTestCase( const char *name );
 /** General-purpose assertions, replacing NSAssert etc.. You can use these outside test cases. */
 
 #define Assert(COND,MSG...)    do{ if( __builtin_expect(!(COND),NO) ) { \
-                                    IN_SEGMENT_NORETURN(Logging) {_AssertFailed(self,_cmd, __FILE__, __LINE__,\
-                                                        #COND,##MSG,NULL);} } }while(0)
+                                    _AssertFailed(self,_cmd, __FILE__, __LINE__,\
+                                                        #COND,##MSG,NULL); } }while(0)
 #define CAssert(COND,MSG...)    do{ if( __builtin_expect(!(COND),NO) ) { \
                                     static const char *_name = __PRETTY_FUNCTION__;\
-                                    IN_SEGMENT_NORETURN(Logging) {_AssertFailed(nil, _name, __FILE__, __LINE__,\
-                                                        #COND,##MSG,NULL);} } }while(0)
+                                    _AssertFailed(nil, _name, __FILE__, __LINE__,\
+                                                        #COND,##MSG,NULL); } }while(0)
 
 // AssertEqual is for Obj-C objects
 #define AssertEqual(VAL,EXPECTED)   do{ id _val = VAL, _expected = EXPECTED;\

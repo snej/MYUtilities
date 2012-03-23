@@ -15,11 +15,14 @@
     You can associate a log message with a particular subsystem or tag by calling LogTo:
         LogTo(FooVerbose, @"the value of foo is %@", foo);
  
-    All logging is off by default.
+    By default, logging is compiled in but disabled at runtime.
 
     To enable logging in general, set the user default 'Log' to 'YES'. You can do this persistently using the 'defaults write' command; but it's very convenient during development to use the Arguments tab in the Xcode Executable Info panel. Just add a new entry to the arguments list, of the form "-Log YES". Now you can check and uncheck that as desired; the change will take effect when relaunching.
 
     Once logging is enabled, you can turn on and off individual categories of logs. For any category "Something", to enable output from calls of the form LogTo(Something, @"..."), set the user default 'LogSomething' to 'YES', just as above.
+ 
+    To disable logging code from being compiled at all, define the preprocessor symbol
+    MY_DISABLE_LOGGING (in your prefix header or target build settings.)
 
     Warn() is a related function that _always_ logs, and prefixes the message with "WARNING***".
         Warn(@"Reactor coolant system has failed");
@@ -31,29 +34,18 @@
 NSString* LOC( NSString *key );     // Localized string lookup
 
 
-// To enable IN_SEGMENT (which breaks rarely-called logging code out of your main code segment,
-// improving locality of reference) you must define MY_USE_NESTED_FNS in your prefix file or
-// target settings, and add the GCC flag "-fnested-functions" to your target's C flags.
-#if defined(MY_USE_NESTED_FNS) && ! defined(__cplusplus)
-    #define IN_SEGMENT(SEG) auto __attribute__ ((section ("__TEXT, "#SEG))) __attribute__ ((noinline)) void _outofband_(void);\
-                            _outofband_();\
-                            void _outofband_(void)
-    #define IN_SEGMENT_NORETURN(SEG) auto __attribute__ ((section ("__TEXT, "#SEG))) __attribute__ ((noinline)) __attribute__((noreturn)) void _assertfailure_(void);\
-                            _assertfailure_();\
-                            void _assertfailure_(void)
-#else
-    #define IN_SEGMENT(SEG)
-    #define IN_SEGMENT_NORETURN(SEG)
-#endif
+#define Warn Warn
+
+
+#ifndef MY_DISABLE_LOGGING
 
 
 #define Log(FMT,ARGS...) do{if(__builtin_expect(_gShouldLog,0)) {\
-                            IN_SEGMENT(Logging){_Log(FMT,##ARGS);}\
+                            _Log(FMT,##ARGS);\
                          } }while(0)
 #define LogTo(DOMAIN,FMT,ARGS...) do{if(__builtin_expect(_gShouldLog,0)) {\
-                                    IN_SEGMENT(Logging) {if(_WillLogTo(@""#DOMAIN)) _LogTo(@""#DOMAIN,FMT,##ARGS);}\
+                                    if(_WillLogTo(@""#DOMAIN)) _LogTo(@""#DOMAIN,FMT,##ARGS);\
                                   } }while(0)
-#define Warn Warn
 
 
 void AlwaysLog( NSString *msg, ... ) __attribute__((format(__NSString__, 1, 2)));
@@ -68,7 +60,20 @@ extern BOOL gMYWarnRaisesException;
 // internals; don't use directly
 extern int _gShouldLog;
 void _Log( NSString *msg, ... ) __attribute__((format(__NSString__, 1, 2)));
-void Warn( NSString *msg, ... ) __attribute__((format(__NSString__, 1, 2)));
 void _LogTo( NSString *domain, NSString *msg, ... ) __attribute__((format(__NSString__, 2, 3)));
 BOOL _WillLogTo( NSString *domain );
 BOOL _EnableLogTo( NSString *domain, BOOL enable );
+
+
+#else // MY_DISABLE_LOGGING
+
+#define Log(FMT,ARGS...) do{ }while(0)
+#define LogTo(DOMAIN,FMT,ARGS...) do{ }while(0)
+#define AlwaysLog NSLog
+#define EnableLogTo( DOMAIN, VALUE ) do{ }while(0)
+#define WillLog() NO
+#define WillLogTo( DOMAIN ) NO
+
+#endif // MY_DISABLE_LOGGING
+
+void Warn( NSString *msg, ... ) __attribute__((format(__NSString__, 1, 2)));

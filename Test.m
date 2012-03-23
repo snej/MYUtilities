@@ -38,7 +38,9 @@ static BOOL RunTestCase( struct TestCaseLink *test )
     if( !test->testptr )
         return YES;     // already ran this test
 
+#ifndef MY_DISABLE_LOGGING
     BOOL oldLogging = EnableLog(YES);
+#endif
     BOOL wasRunningTestCase = gRunningTestCase;
     gRunningTestCase = YES;
     struct TestCaseLink* prevTest = sCurrentTest;
@@ -78,7 +80,9 @@ static BOOL RunTestCase( struct TestCaseLink *test )
     }
     sCurrentTest = prevTest;
     gRunningTestCase = wasRunningTestCase;
+#ifndef MY_DISABLE_LOGGING
     EnableLog(oldLogging);
+#endif
     return test->passed;
 }
 
