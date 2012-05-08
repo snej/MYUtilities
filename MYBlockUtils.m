@@ -26,6 +26,7 @@
 
 
 void MYAfterDelay( NSTimeInterval delay, void (^block)() ) {
+#ifndef GNUSTEP
     NSOperationQueue* queue = [NSOperationQueue currentQueue];
     if (queue && ![NSThread isMainThread]) {
         // Can't just call the block directly, because then it won't be running under the control
@@ -40,7 +41,9 @@ void MYAfterDelay( NSTimeInterval delay, void (^block)() ) {
         } else {
             dispatch_async(dispatch_get_current_queue(), block);
         }
-    } else {
+    } else
+#endif
+    {
         block = [[block copy] autorelease];
         [block performSelector: @selector(my_run_as_block)
                     withObject: nil
