@@ -25,6 +25,16 @@
 }
 
 
+- (NSString*) my_pathAndQuery {
+    CFStringRef path = CFURLCopyPath((CFURLRef)self);
+    CFStringRef resource = CFURLCopyResourceSpecifier((CFURLRef)self);
+    NSString* result = [(id)path stringByAppendingString: (id)resource];
+    CFRelease(path);
+    CFRelease(resource);
+    return result;
+}
+
+
 - (NSURLProtectionSpace*) my_protectionSpaceWithRealm: (NSString*)realm
                                  authenticationMethod: (NSString*)authenticationMethod
 {
