@@ -175,7 +175,7 @@ void _AssertFailed( id rcvr, const void *selOrFn, const char *sourceFile, int so
     } else
         message = [NSString stringWithUTF8String: condString];
     
-    Log(@"*** ASSERTION FAILED: %@ ... NOT!", message);
+    NSLog(@"*** ASSERTION FAILED: %@", message);
     
     if( rcvr )
         [[NSAssertionHandler currentHandler] handleFailureInMethod: (SEL)selOrFn
