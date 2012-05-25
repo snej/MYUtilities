@@ -82,8 +82,14 @@ static void InitLogging()
             BOOL value = [[NSUserDefaults standardUserDefaults] boolForKey: key];
             if( key.length==3 )
                 _gShouldLog = value;
-            else if( value )
-                [sEnabledDomains addObject: [key substringFromIndex: 3]];
+            else if( value ) {
+                key = [key substringFromIndex: 3]; // trim 'Log'
+                [sEnabledDomains addObject: key];
+                if (key.length > 7 && [key hasSuffix: @"Verbose"]) {
+                    key = [key substringToIndex: key.length - 7]; // trim 'Verbose'
+                    [sEnabledDomains addObject: key];
+                }
+            }
         }
     }
     sLoggingTo = getLoggingMode(STDERR_FILENO);
