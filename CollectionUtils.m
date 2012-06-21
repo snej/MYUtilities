@@ -418,6 +418,21 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
     return desc;
 }
 
+#if NS_BLOCKS_AVAILABLE
+- (NSDictionary*) my_dictionaryByUpdatingValues: (id (^)(id key, id value))block {
+    __block NSMutableDictionary* updated = nil;
+    [self enumerateKeysAndObjectsUsingBlock: ^(id key, id value, BOOL *stop) {
+        id nuValue = block(key, value);
+        if (nuValue != value) {
+            if (!updated)
+                updated = [self mutableCopy];
+            [updated setValue: nuValue forKey: key];
+        }
+    }];
+    return updated ? [updated autorelease] : self;
+}
+#endif
+
 @end
 
 

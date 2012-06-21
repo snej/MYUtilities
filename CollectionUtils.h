@@ -90,6 +90,13 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 + (NSSet*) my_differenceOfSet: (NSSet*)set1 andSet: (NSSet*)set2;
 @end
 
+#if NS_BLOCKS_AVAILABLE
+@interface NSDictionary (MYUtils)
+- (NSDictionary*) my_dictionaryByUpdatingValues: (id (^)(id key, id value))block;
+
+@end
+#endif
+
 
 @interface NSData (MYUtils)
 - (NSString*) my_UTF8ToString;
