@@ -99,11 +99,11 @@ static NSString* printableOSType( OSType t ) {
 
 static NSString* printableErrorCode( NSInteger code ) {
     if ((OSStatus)code < -99999)
-        return $sprintf(@"%u", code);       // CSSM errors are huge unsigned values > 0x80000000
+        return $sprintf(@"%u", (unsigned)code);       // CSSM errors are huge unsigned values > 0x80000000
     NSString *result = printableOSType((OSType)code);
     if (result)
         return result;                      // CoreAudio errors are OSTypes (4-char strings)
-    return $sprintf(@"%ld", code);          // Default: OSStatus and errno values are signed
+    return $sprintf(@"%ld", (long)code);    // Default: OSStatus and errno values are signed
 }
 
 static NSString* MYShortErrorDomainName( NSString *domain ) {
