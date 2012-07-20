@@ -38,7 +38,7 @@
                 err = noErr;
                 errStr = nil;
             } else if (error) {
-                err = error.code;
+                err = (OSStatus)error.code;
                 errStr = error.localizedDescription;
             }
         }
