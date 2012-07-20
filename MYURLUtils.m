@@ -52,6 +52,8 @@
 - (NSURLCredential*) my_credentialForRealm: (NSString*)realm
                       authenticationMethod: (NSString*)authenticationMethod
 {
+    if ($equal(authenticationMethod, NSURLAuthenticationMethodServerTrust))
+        return nil;
     NSString* username = self.user;
     NSString* password = self.password;
     if (username && password)
