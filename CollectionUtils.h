@@ -103,6 +103,26 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @end
 
 
+// Compatibility declarations to allow NSArray/NSDictionary subscripting in iOS with Xcode 4.4.
+// The compiler needs to see declarations of these methods to make the class subscriptable, but
+// the iOS 5.1 SDK doesn't contain them on NSArray/NSDictionary. It appears it isn't necessary
+// to actually implement these methods, though...
+#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED < 60000)
+@interface NSArray (PreiOS6)
+- (id)objectAtIndexedSubscript:(NSUInteger)index;
+@end
+@interface NSMutableArray (PreiOS6)
+- (void)setObject: (id)object atIndexedSubscript:(NSUInteger)index;
+@end
+@interface NSDictionary (PreiOS6)
+- (id)objectForKeyedSubscript:(id)key;
+@end
+@interface NSMutableDictionary (PreiOS6)
+- (void)setObject: (id)object forKeyedSubscript:(id)key;
+@end
+#endif
+
+
 #ifdef GNUSTEP
 #define kCFBooleanTrue  ([NSNumber numberWithBool: YES])
 #define kCFBooleanFalse ([NSNumber numberWithBool: NO])
