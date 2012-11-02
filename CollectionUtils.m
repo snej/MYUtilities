@@ -10,15 +10,16 @@
 #import "Test.h"
 
 
-NSDictionary* _dictof(const struct _dictpair* pairs, size_t count)
+NSDictionary* _dictof(const _dictpair pairs[], size_t count)
 {
     CAssert(count<10000);
     id objects[count], keys[count];
     size_t n = 0;
-    for( size_t i=0; i<count; i++,pairs++ ) {
-        if( pairs->value ) {
-            objects[n] = pairs->value;
-            keys[n] = pairs->key;
+    const _dictpair* pair = pairs;
+    for( size_t i=0; i<count; i++,pair++ ) {
+        if( (*pair)[1] ) {
+            keys[n] = (*pair)[0];
+            objects[n] = (*pair)[1];
             n++;
         }
     }
@@ -26,15 +27,16 @@ NSDictionary* _dictof(const struct _dictpair* pairs, size_t count)
 }
 
 
-NSMutableDictionary* _mdictof(const struct _dictpair* pairs, size_t count)
+NSMutableDictionary* _mdictof(const _dictpair pairs[], size_t count)
 {
     CAssert(count<10000);
     id objects[count], keys[count];
     size_t n = 0;
-    for( size_t i=0; i<count; i++,pairs++ ) {
-        if( pairs->value ) {
-            objects[n] = pairs->value;
-            keys[n] = pairs->key;
+    const _dictpair* pair = pairs;
+    for( size_t i=0; i<count; i++,pair++ ) {
+        if( (*pair)[1] ) {
+            keys[n] = (*pair)[0];
+            objects[n] = (*pair)[1];
             n++;
         }
     }

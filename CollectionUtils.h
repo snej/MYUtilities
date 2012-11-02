@@ -16,10 +16,10 @@
 #define $marray(OBJS...)    ({id objs[]={OBJS}; \
                               [NSMutableArray arrayWithObjects: objs count: sizeof(objs)/sizeof(id)];})
 
-#define $dict(PAIRS...)     ({struct _dictpair pairs[]={PAIRS}; \
-                              _dictof(pairs,sizeof(pairs)/sizeof(struct _dictpair));})
-#define $mdict(PAIRS...)    ({struct _dictpair pairs[]={PAIRS}; \
-                              _mdictof(pairs,sizeof(pairs)/sizeof(struct _dictpair));})
+#define $dict(PAIRS...)     ({_dictpair pairs[]={PAIRS}; \
+                              _dictof(pairs,sizeof(pairs)/sizeof(_dictpair));})
+#define $mdict(PAIRS...)    ({_dictpair pairs[]={PAIRS}; \
+                              _mdictof(pairs,sizeof(pairs)/sizeof(_dictpair));})
 
 #define $object(VAL)        ({__typeof(VAL) v=(VAL); _box(&v,@encode(__typeof(v)));})
 
@@ -152,9 +152,9 @@ static inline struct foreachstate _initforeach( NSArray *arr ) {
 
 
 // Internals (don't use directly)
-struct _dictpair { __unsafe_unretained id key; __unsafe_unretained id value; };
-NSDictionary* _dictof(const struct _dictpair*, size_t count);
-NSMutableDictionary* _mdictof(const struct _dictpair*, size_t count);
+typedef id _dictpair[2];
+NSDictionary* _dictof(const _dictpair*, size_t count);
+NSMutableDictionary* _mdictof(const _dictpair[], size_t count);
 NSValue* _box(const void *value, const char *encoding);
 id _cast(Class,id);
 id _castNotNil(Class,id);
