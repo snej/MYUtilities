@@ -68,53 +68,30 @@ void MYReportException( NSException *x, NSString *where, ... )
 
 - (NSString*) my_callStack
 {
-    NSArray *addresses = [self my_callStackReturnAddressesSkipping: 1 limit: 15];
-    if (!addresses)
-        return nil;
-    
-    FILE *file = NULL;
-#if !TARGET_OS_IPHONE
-    // We pipe the hex return addresses through the 'atos' tool to get symbolic names:
-    // Adapted from <http://paste.lisp.org/display/47196>:
-    NSMutableString *cmd = [NSMutableString stringWithFormat: @"/usr/bin/atos -p %d", getpid()];
-    NSValue *addr;
-    foreach(addr,addresses) {
-        [cmd appendFormat: @" %p", [addr pointerValue]];
-    }
-    file = popen( [cmd UTF8String], "r" );
-#endif
-    
-    NSMutableString *result = [NSMutableString string];
-    if( file ) {
-        NSMutableData *output = [NSMutableData data];
-        char buffer[512];
-        size_t length;
-        while ((length = fread( buffer, 1, sizeof( buffer ), file ) ))
-            [output appendBytes: buffer length: length];
-        pclose( file );
-        NSString *outStr = [[[NSString alloc] initWithData: output encoding: NSUTF8StringEncoding] autorelease];
-        
-        NSString *line;
-        foreach( line, [outStr componentsSeparatedByString: @"\n"] ) {
-            // Skip  frames that are part of the exception/assertion handling itself:
-            if( [line hasPrefix: @"-[NSAssertionHandler"] || [line hasPrefix: @"+[NSException"] 
-                    || [line hasPrefix: @"-[NSException"] || [line hasPrefix: @"_AssertFailed"]
-                    || [line hasPrefix: @"objc_"] )
-                continue;
-            if( result.length )
-                [result appendString: @"\n"];
-            [result appendString: @"\t"];
-            [result appendString: line];
-            // Don't show the "__start" frame below "main":
-            if( [line hasPrefix: @"main "] )
-                break;
+    NSMutableString* result = [NSMutableString string];
+    unsigned lines = 0;
+    for (NSString* line in [self callStackSymbols]) {
+        NSString* symbol = @"";
+        if (line.length > 40) {
+            NSRange space = [line rangeOfString: @" " options: 0 range: NSMakeRange(41, line.length - 41)];
+            if (space.length > 0)
+                symbol = [line substringFromIndex: NSMaxRange(space)];
         }
-    } else {
-        NSValue *addr;
-        foreach(addr,addresses) {
-            if( result.length )
-                [result appendString: @" <- "];
-            [result appendFormat: @"%p", [addr pointerValue]];
+        // Skip  frames that are part of the exception/assertion handling itself:
+        if( [symbol hasPrefix: @"-[NSAssertionHandler"] || [symbol hasPrefix: @"+[NSException"]
+                || [symbol hasPrefix: @"-[NSException"] || [symbol hasPrefix: @"_AssertFailed"]
+                || [symbol hasPrefix: @"__exception"] || [symbol hasPrefix: @"objc_"] )
+            continue;
+        if( result.length )
+            [result appendString: @"\n"];
+        [result appendString: @"\t"];
+        [result appendString: line];
+        // Don't show the "__start" frame below "main":
+        if( [symbol hasPrefix: @"main "] || [symbol hasPrefix: @"start "] )
+            break;
+        if (++lines >= 15) {
+            [result appendString: @"\n\t..."];
+            break;
         }
     }
     return result;
