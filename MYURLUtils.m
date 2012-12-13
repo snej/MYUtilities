@@ -58,7 +58,7 @@
     NSString* password = self.password;
     if (username && password)
         return [NSURLCredential credentialWithUser: username password: password
-                                       persistence: NSURLCredentialPersistenceNone];
+                                       persistence: NSURLCredentialPersistenceForSession];
     
     NSURLProtectionSpace* space = [self my_protectionSpaceWithRealm: realm
                                                authenticationMethod: authenticationMethod];
