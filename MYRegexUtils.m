@@ -1,6 +1,6 @@
 //
 //  MYRegexUtils.m
-//  TouchDB
+//  MYUtilities
 //
 //  Created by Jens Alfke on 6/28/12.
 //  Copyright (c) 2012 Couchbase, Inc. All rights reserved.
