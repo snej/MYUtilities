@@ -29,6 +29,9 @@ static inline NSURL* $url(NSString* str) {
 /** Removes the username and password components, if any, from a URL. */
 @property (readonly) NSURL* my_URLByRemovingUser;
 
+/** Returns the URL's absoluteString with the password, if any, replaced with "*****". */
+@property (readonly) NSString* my_sanitizedString;
+
 /** Returns an NSURLProtectionSpace initialized based on the attributes of this URL
     (host, effective port, scheme) and the given realm and authentication method. */
 - (NSURLProtectionSpace*) my_protectionSpaceWithRealm: (NSString*)realm

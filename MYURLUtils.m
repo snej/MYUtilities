@@ -97,14 +97,40 @@
 }
 
 
+- (NSString*) my_sanitizedString {
+    CFRange passRange = CFURLGetByteRangeForComponent((CFURLRef)self, kCFURLComponentPassword, NULL);
+    if (passRange.length == 0)
+        return self.absoluteString;
+    NSUInteger passEnd = passRange.location + passRange.length;
+
+    CFIndex nBytes = CFURLGetBytes((CFURLRef)self, NULL, 0);
+    UInt8 urlBytes[nBytes];
+    CFURLGetBytes((CFURLRef)self, urlBytes, sizeof(urlBytes));
+    
+    NSString* before = [[NSString alloc] initWithBytes: urlBytes
+                                                length: passRange.location
+                                              encoding:NSUTF8StringEncoding];
+    NSString* after = [[NSString alloc] initWithBytes: &urlBytes[passEnd]
+                                               length: (nBytes - passEnd)
+                                             encoding:NSUTF8StringEncoding];
+    NSString* result = [NSString stringWithFormat: @"%@*****%@", before, after];
+    [before release];
+    [after release];
+    return result;
+}
+
+
 @end
 
 
 TestCase(MYURLUtils) {
     NSURL* url = $url(@"https://example.com/path/here?query#fragment");
     CAssertEqual(url.my_URLByRemovingUser, url);
+    CAssertEqual(url.my_sanitizedString, @"https://example.com/path/here?query#fragment");
     url = $url(@"https://bob@example.com/path/here?query#fragment");
     CAssertEqual(url.my_URLByRemovingUser, $url(@"https://example.com/path/here?query#fragment"));
+    CAssertEqual(url.my_sanitizedString, @"https://bob@example.com/path/here?query#fragment");
     url = $url(@"https://bob:foo@example.com/path/here?query#fragment");
     CAssertEqual(url.my_URLByRemovingUser, $url(@"https://example.com/path/here?query#fragment"));
+    CAssertEqual(url.my_sanitizedString, @"https://bob:*****@example.com/path/here?query#fragment");
 }
