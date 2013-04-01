@@ -64,7 +64,7 @@
             first = NO;
         else
             [desc appendString: @", "];
-        [desc appendFormat: @"-[%@ %s]", [inv.target class], inv.selector];
+        [desc appendFormat: @"-[%@ %@]", [inv.target class], NSStringFromSelector(inv.selector)];
     }
     [desc appendString: @"}"];
     return desc;
