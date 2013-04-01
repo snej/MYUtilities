@@ -58,6 +58,13 @@ BOOL kvSetSet( id owner, NSString *property, NSMutableSet *set, NSSet *newSet );
 BOOL kvAddToSet( id owner, NSString *property, NSMutableSet *set, id objToAdd );
 BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToRemove );
 
+// Use this to prevent an object from being dealloced in this scope, even if you call something
+// that releases it.
+#if __has_feature(objc_arc)
+#define MYDeferDealloc(OBJ) __unused id _deferDealloc_##__LINE__ = (OBJ)
+#else
+#define MYDeferDealloc(OBJ) [[(OBJ) retain] autorelease]
+#endif
 
 #define $true   ((NSNumber*)kCFBooleanTrue)
 #define $false  ((NSNumber*)kCFBooleanFalse)
