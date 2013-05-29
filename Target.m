@@ -95,6 +95,18 @@ static BOOL equalInvocations( NSInvocation *a, NSInvocation *b )
 }
 
 
+- (void) retainTargets
+{
+    NSMutableArray *invocations = $castIf(NSMutableArray,_invocations);
+    if( invocations ) {
+        for( NSInvocation *invocation in invocations )
+            [invocation retainArguments];
+    } else {
+        [_invocations retainArguments];
+    }
+}
+
+
 - (void) addTarget: (MYTarget*)target
 {
     setObj(&_invocations,[self invocations]);

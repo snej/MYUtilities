@@ -18,6 +18,8 @@
 
 - (void) addTarget: (MYTarget*)target;
 
+- (void) retainTargets;
+
 - (id) invokeWithSender: (id)sender;
 
 @end
