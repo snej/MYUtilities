@@ -162,7 +162,7 @@ static inline struct foreachstate _initforeach( NSArray *arr ) {
 typedef id _dictpair[2];
 NSDictionary* _dictof(const _dictpair*, size_t count);
 NSMutableDictionary* _mdictof(const _dictpair[], size_t count);
-NSValue* _box(const void *value, const char *encoding);
+id _box(const void *value, const char *encoding);
 id _cast(Class,id);
 id _castNotNil(Class,id);
 id _castIf(Class,id);

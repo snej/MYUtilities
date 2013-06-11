@@ -74,7 +74,7 @@ BOOL $equal(id obj1, id obj2)      // Like -isEqual: but works even if either/bo
 }
 
 
-NSValue* _box(const void *value, const char *encoding)
+id _box(const void *value, const char *encoding)
 {
     // file:///Developer/Documentation/DocSets/com.apple.ADC_Reference_Library.DeveloperTools.docset/Contents/Resources/Documents/documentation/DeveloperTools/gcc-4.0.1/gcc/Type-encoding.html
     char e = encoding[0];
