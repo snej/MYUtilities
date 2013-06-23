@@ -44,6 +44,13 @@ NSString* $string( const char *utf8Str );
 #define $castArrayOf(ITEMCLASSNAME,OBJ) _castArrayOf([ITEMCLASSNAME class],(OBJ))
 #define $castIfArrayOf(ITEMCLASSNAME,OBJ) _castIfArrayOf([ITEMCLASSNAME class],(OBJ))
 
+#if __has_feature(objc_arc)
+#define setObj(VAR,VALUE) *(VAR) = (VALUE)
+#define setObjCopy(VAR,VALUE) *(VAR) = [(VALUE) copy]
+#define setString(VAR,VALUE) *(VAR) = [(VALUE) copy]
+#define ifSetObj(VAR,VALUE) (((VALUE) != *(VAR) && ![(VALUE) isEqual: *(VAR)]) ? (*(VAR) = (VALUE), YES) : NO)
+
+#else
 void setObj( id *var, id value );
 BOOL ifSetObj( id *var, id value );
 void setObjCopy( id *var, id valueToCopy );
@@ -51,6 +58,7 @@ BOOL ifSetObjCopy( id *var, id value );
 
 static inline void setString( NSString **var, NSString *value ) {setObjCopy(var,value);}
 static inline BOOL ifSetString( NSString **var, NSString *value ) {return ifSetObjCopy(var,value);}
+#endif
 
 BOOL kvSetObj( id owner, NSString *property, id *varPtr, id value );
 BOOL kvSetObjCopy( id owner, NSString *property, id *varPtr, id value );
