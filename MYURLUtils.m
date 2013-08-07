@@ -25,6 +25,20 @@
 }
 
 
+- (NSURL*) my_baseURL {
+    NSString* scheme = self.scheme.lowercaseString;
+    NSMutableString* str = [NSMutableString stringWithFormat: @"%@://%@",
+                            scheme, self.host.lowercaseString];
+    NSNumber* port = self.port;
+    if (port) {
+        int defaultPort = [scheme isEqualToString: @"https"] ? 443 : 80;
+        if (port.intValue != defaultPort)
+            [str appendFormat: @":%@", port];
+    }
+    return [NSURL URLWithString: str];
+}
+
+
 - (NSString*) my_pathAndQuery {
     CFStringRef path = CFURLCopyPath((CFURLRef)self);
     CFStringRef resource = CFURLCopyResourceSpecifier((CFURLRef)self);

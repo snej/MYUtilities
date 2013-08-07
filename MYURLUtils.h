@@ -23,6 +23,9 @@ static inline NSURL* $url(NSString* str) {
 /** YES if the scheme is 'https:'. */
 @property (readonly) BOOL my_isHTTPS;
 
+/** Returns a URL with just the scheme, host and port (if the port is nonstandard). */
+- (NSURL*) my_baseURL;
+
 /** The path and everything after it. This is what appears on the first line of an HTTP request. */
 @property (readonly) NSString* my_pathAndQuery;
 
