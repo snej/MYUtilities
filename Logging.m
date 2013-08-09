@@ -36,7 +36,8 @@ typedef enum {
     kLoggingToOther,
     kLoggingToFile,
     kLoggingToTTY,
-    kLoggingToColorTTY
+    kLoggingToColorTTY,     // Terminal that supports ANSI color escape codes
+    kLoggingToColorXcode    // Xcode with XcodeColors plugin installed
 } MYLoggingTo;
 
 
@@ -49,6 +50,10 @@ static NSMutableSet *sEnabledDomains;
 static MYLoggingTo getLoggingMode( int fd )
 {
     if( isatty(fd) ) {
+        const char *xcode_colors = getenv("XcodeColors");
+        if (xcode_colors && (strcmp(xcode_colors, "YES") == 0))
+            return kLoggingToColorXcode;
+
         const char *term = getenv("TERM");
         if( term && (strstr(term,"ANSI") || strstr(term,"ansi") || strstr(term,"color")) )
             return kLoggingToColorTTY;
@@ -132,8 +137,24 @@ BOOL _EnableLogTo( NSString *domain, BOOL enable )
 
 
 #define kWarningPrefix @"\007WARNING*** "
-            
-#define COLOR(STR)     (sLoggingTo==kLoggingToColorTTY ?@"\033["#STR"m" :@"")
+
+// See http://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+// See https://github.com/robbiehanson/XcodeColors
+#define ANSI_COLOR_ESC(STR)     @"\033[" STR "m"
+#define XCODE_COLOR_ESC(STR)    @"\033[" STR ";"
+
+#define COLOR_RESET     color(ANSI_COLOR_ESC("0"),  XCODE_COLOR_ESC(""))
+#define COLOR_WARNING   color(ANSI_COLOR_ESC("91"), XCODE_COLOR_ESC("fg194,54,33"))
+#define COLOR_PREFIX    color(ANSI_COLOR_ESC("93"), XCODE_COLOR_ESC("fg0,128,0"))
+#define COLOR_TIME      color(ANSI_COLOR_ESC("36"), XCODE_COLOR_ESC("fg160,160,160"))
+
+static NSString* color(NSString* ansi, NSString* xcode) {
+    switch (sLoggingTo) {
+        case kLoggingToColorTTY:    return ansi;
+        case kLoggingToColorXcode:  return xcode;
+        default:                    return @"";
+    }
+}
 
 
 static void _Logv( NSString *prefix, NSString *msg, va_list args )
@@ -155,10 +176,10 @@ static void _Logv( NSString *prefix, NSString *msg, va_list args )
 
         NSString *separator = prefix.length ?@": " :@"";
         msg = [[NSString alloc] initWithFormat: msg arguments: args];
-        NSString *prefixColor = $equal(prefix, kWarningPrefix) ?COLOR(91) :COLOR(93);
-        NSString *msgColor = $equal(prefix, kWarningPrefix) ?@"" :COLOR(0);
+        NSString *prefixColor = $equal(prefix, kWarningPrefix) ?COLOR_WARNING :COLOR_PREFIX;
+        NSString *msgColor = $equal(prefix, kWarningPrefix) ?@"" :COLOR_RESET;
         NSString *finalMsg = [[NSString alloc] initWithFormat: @"%@%@%@ %@%@%@%@%@\n", 
-                              COLOR(36),timestamp, timestampTrailer,
+                              COLOR_TIME,timestamp, timestampTrailer,
                               prefixColor,prefix,separator,
                               msgColor,msg];
         fputs([finalMsg UTF8String], stderr);
