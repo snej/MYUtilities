@@ -21,3 +21,4 @@ void MYCancelAfterDelay( id block );
 
 /** Runs the block on the given thread's runloop. */
 void MYOnThread( NSThread* thread, void (^block)());
+void MYOnThreadSynchronously( NSThread* thread, void (^block)());

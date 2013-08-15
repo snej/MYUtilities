@@ -67,13 +67,22 @@ void MYCancelAfterDelay( id block ) {
 }
 
 
-void MYOnThread( NSThread* thread, void (^block)()) {
+static void MYOnThreadWaiting( NSThread* thread, BOOL waitUntilDone, void (^block)()) {
     block = [block copy];
     [block performSelector: @selector(my_run_as_block)
                   onThread: thread
                 withObject: block
-             waitUntilDone: NO];
+             waitUntilDone: waitUntilDone];
     [block release];
+}
+
+
+void MYOnThread( NSThread* thread, void (^block)()) {
+    MYOnThreadWaiting(thread, NO, block);
+}
+
+void MYOnThreadSynchronously( NSThread* thread, void (^block)()) {
+    MYOnThreadWaiting(thread, YES, block);
 }
 
 
