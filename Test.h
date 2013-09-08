@@ -81,6 +81,8 @@ void _RequireTestCase( const char *name );
 #define CAssertEq(VAL,EXPECTED) do{ __typeof(VAL) _val = VAL; __typeof(EXPECTED) _expected = EXPECTED;\
                                     CAssert(_val==_expected, @"Unexpected value for %s: %@ (expected %@)", #VAL,$object(_val),$object(_expected)); \
                                 }while(0)
+#define CAssertAlmostEq(N1,N2, TOL) CAssert(fabs((N1) - (N2)) < (TOL), \
+                                        @"Got %.9f, expected %.9f", (N1), (N2));
 
 #define AssertNil(VAL)          AssertEq((VAL),nil)
 #define CAssertNil(VAL)         CAssertEq((VAL),(id)nil)  // ARC is picky about the type of nil here
