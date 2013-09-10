@@ -90,6 +90,38 @@ void _RequireTestCase( const char *name );
 
 #define AssertAbstractMethod()  _AssertAbstractMethodFailed(self,_cmd);
 
+
+/** Simple test-coverage helpers:
+    The Cover() macro verifies that both sides of an if(), or the body of a while(),
+    are exercised during a test. Just wrap Cover(...) around the condition being tested,
+    and during testing a warning will be logged if that instance of Cover() is called with
+    only a true or only a false value. (Unfortunately it can't detect if the Cover() call
+    isn't reached at all.)
+    In order for this to work you need to add a TestedBy(TestName) call at the start of the
+    function/method, where TestName is the name of the TestCase function that should be
+    providing the code coverage.
+    Example:
+        - (void) foo {
+            TestedBy(FooTest);
+            if (Cover(someCondition())) { ... } else { ... }
+        }
+    After FooTest completes, a warning will be logged if someCondition() was only true or only
+    false during that Cover call.
+ 
+    To make this less obtrusive, you might want to do something like
+        #define ifc(COND) if(Cover(COND))
+*/
+
+#if DEBUG
+#define TestedBy(TEST_NAME) static const char* __unused kTestedBy = #TEST_NAME; \
+            extern void Test_##TEST_NAME(void); __unused void* x = &Test_##TEST_NAME
+#define Cover(CONDITION) _Cover(__FILE__, __LINE__, kTestedBy, #CONDITION, !!(CONDITION))
+#else
+#define TestedBy(TEST_NAME)
+#define Cover(CONDITION) (CONDITION)
+#endif
+
+
 // Nasty internals ...
 #if DEBUG
 void _RunTestCase( void (*testptr)(), const char *name );
@@ -100,3 +132,4 @@ extern struct TestCaseLink *gAllTestCases;
 void _AssertFailed( id rcvr, const void *selOrFn, const char *sourceFile, int sourceLine,
                    const char *condString, NSString *message, ... ) __attribute__((noreturn));
 void _AssertAbstractMethodFailed( id rcvr, SEL cmd) __attribute__((noreturn));
+BOOL _Cover(const char *sourceFile, int sourceLine, const char*testName, const char *testSource, BOOL whichWay);

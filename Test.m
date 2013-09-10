@@ -20,6 +20,8 @@ static NSMutableArray* sFailedTestNames;
 static struct TestCaseLink *sCurrentTest;
 static int sCurTestCaseExceptions;
 
+static BOOL CheckCoverage(const char* testName);
+
 
 static void TestCaseExceptionReporter( NSException *x ) {
     sCurTestCaseExceptions++;
@@ -53,16 +55,18 @@ static BOOL RunTestCase( struct TestCaseLink *test )
         MYSetExceptionReporter(&TestCaseExceptionReporter);
 
         test->testptr();    //SHAZAM!
-        
-        if( sCurTestCaseExceptions == 0 ) {
-            Log(@"√√√ %s passed\n\n",test->name);
-            test->passed = YES;
-            sPassed++;
-        } else {
+
+        if (!CheckCoverage(test->name)) {
+            Log(@"XXX FAILED test case '%s' due to coverage failures", test->name);
+        } else if( sCurTestCaseExceptions > 0 ) {
             Log(@"XXX FAILED test case '%s' due to %i exception(s) already reported above",
                 test->name,sCurTestCaseExceptions);
             sFailed++;
             RecordFailedTest(test);
+        } else {
+            Log(@"√√√ %s passed\n\n",test->name);
+            test->passed = YES;
+            sPassed++;
         }
     }@catch( NSException *x ) {
         if( [x.name isEqualToString: @"TestCaseSkipped"] )
@@ -135,6 +139,8 @@ void RunTestCases( int argc, const char **argv )
             }
         }
     }
+    if (sFailed == 0)
+        CheckCoverage("");
     if( sPassed>0 || sFailed>0 || stopAfterTests ) {
         NSAutoreleasePool *pool = [NSAutoreleasePool new];
         if( sFailed==0 )
@@ -153,6 +159,50 @@ void RunTestCases( int argc, const char **argv )
     }
     [sFailedTestNames release];
     sFailedTestNames = nil;
+}
+
+
+#pragma mark - TEST COVERAGE:
+
+
+// Maps test name -> dict([filename, line, teststring] -> int)
+static NSMutableDictionary* sCoverageByTest;
+
+
+// Records the boolean result of a specific Cover() call.
+BOOL _Cover(const char *sourceFile, int sourceLine, const char*testName,
+            const char *testSource, BOOL whichWay)
+{
+    if (!gRunningTestCase)
+        return whichWay;
+
+    NSString* testKey = @(testName);
+    if (!sCoverageByTest)
+        sCoverageByTest = [[NSMutableDictionary alloc] init];
+    NSMutableDictionary* cases = sCoverageByTest[testKey];
+    if (!cases)
+        cases = sCoverageByTest[testKey] = [NSMutableDictionary dictionary];
+
+    NSArray* key = @[@(sourceFile), @(sourceLine), @(testSource)];
+    int results = [cases[key] intValue];
+    results |= (whichWay ? 2 : 1);      // Bit 0 records a false result, bit 1 records true
+    cases[key] = @(results);
+    return whichWay;
+}
+
+static BOOL CheckCoverage(const char* testName) {
+    BOOL ok = YES;
+    NSDictionary* cases = sCoverageByTest[@(testName)];
+    for (NSArray* key in cases) {
+        int results = [cases[key] intValue];
+        if (results != 3) {
+            Warn(@"Coverage: At %@:%d, only saw (%@) == %s",
+                 key[0], [key[1] intValue], key[2], (results==2 ?"YES" : "NO"));
+            ok = NO;
+        }
+    }
+    [sCoverageByTest removeObjectForKey: @(testName)];
+    return ok;
 }
 
 

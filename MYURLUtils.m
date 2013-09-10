@@ -13,8 +13,9 @@
 
 
 - (UInt16) my_effectivePort {
+    TestedBy(MYURLUtils);
     NSNumber* portObj = self.port;
-    if (portObj)
+    if (Cover(portObj))
         return portObj.unsignedShortValue;
     return self.my_isHTTPS ? 443 : 80;
 }
@@ -26,13 +27,14 @@
 
 
 - (NSURL*) my_baseURL {
+    TestedBy(MYURLUtils);
     NSString* scheme = self.scheme.lowercaseString;
     NSMutableString* str = [NSMutableString stringWithFormat: @"%@://%@",
                             scheme, self.host.lowercaseString];
     NSNumber* port = self.port;
-    if (port) {
+    if (Cover(port)) {
         int defaultPort = [scheme isEqualToString: @"https"] ? 443 : 80;
-        if (port.intValue != defaultPort)
+        if (Cover(port.intValue != defaultPort))
             [str appendFormat: @":%@", port];
     }
     return [NSURL URLWithString: str];
@@ -50,13 +52,14 @@
 
 
 - (NSURL*) my_URLByRemovingUser {
+    TestedBy(MYURLUtils);
     CFRange userRange, userPlusDelimRange, passPlusDelimRange;
     userRange = CFURLGetByteRangeForComponent((CFURLRef)self, kCFURLComponentUser, &userPlusDelimRange);
     CFURLGetByteRangeForComponent((CFURLRef)self, kCFURLComponentPassword, &passPlusDelimRange);
-    if (userRange.length == 0)
+    if (Cover(userRange.length == 0))
         return self;
     CFIndex delEnd;
-    if (passPlusDelimRange.length == 0)
+    if (Cover(passPlusDelimRange.length == 0))
         delEnd = userPlusDelimRange.location + userPlusDelimRange.length;
     else
         delEnd = passPlusDelimRange.location+passPlusDelimRange.length;
@@ -93,18 +96,19 @@
 - (NSURLCredential*) my_credentialForRealm: (NSString*)realm
                       authenticationMethod: (NSString*)authenticationMethod
 {
+    TestedBy(MYURLUtils);
     if ($equal(authenticationMethod, NSURLAuthenticationMethodServerTrust))
         return nil;
     NSString* username = self.user;
     NSString* password = self.password;
-    if (username && password)
+    if (Cover(username && password))
         return [NSURLCredential credentialWithUser: username password: password
                                        persistence: NSURLCredentialPersistenceForSession];
     
     NSURLProtectionSpace* space = [self my_protectionSpaceWithRealm: realm
                                                authenticationMethod: authenticationMethod];
     NSURLCredentialStorage* storage = [NSURLCredentialStorage sharedCredentialStorage];
-    if (username)
+    if (Cover(username))
         return [[storage credentialsForProtectionSpace: space] objectForKey: username];
     else
         return [storage defaultCredentialForProtectionSpace: space];
@@ -112,8 +116,9 @@
 
 
 - (NSString*) my_sanitizedString {
+    TestedBy(MYURLUtils);
     CFRange passRange = CFURLGetByteRangeForComponent((CFURLRef)self, kCFURLComponentPassword, NULL);
-    if (passRange.length == 0)
+    if (Cover(passRange.length == 0))
         return self.absoluteString;
     NSUInteger passEnd = passRange.location + passRange.length;
 
