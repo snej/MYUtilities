@@ -3,7 +3,7 @@
 //  MYUtilities
 //
 //  Created by Jens Alfke on 1/5/08.
-//  Copyright 2008 Jens Alfke. All rights reserved.
+//  Copyright 2008-2013 Jens Alfke. All rights reserved.
 //
 
 #import "Logging.h"
@@ -176,8 +176,9 @@ static void _Logv( NSString *prefix, NSString *msg, va_list args )
 
         NSString *separator = prefix.length ?@": " :@"";
         msg = [[NSString alloc] initWithFormat: msg arguments: args];
-        NSString *prefixColor = $equal(prefix, kWarningPrefix) ?COLOR_WARNING :COLOR_PREFIX;
-        NSString *msgColor = $equal(prefix, kWarningPrefix) ?@"" :COLOR_RESET;
+        BOOL isWarning = [prefix isEqualToString: kWarningPrefix];
+        NSString *prefixColor = isWarning ?COLOR_WARNING :COLOR_PREFIX;
+        NSString *msgColor = isWarning ?@"" :COLOR_RESET;
         NSString *finalMsg = [[NSString alloc] initWithFormat: @"%@%@%@ %@%@%@%@%@\n", 
                               COLOR_TIME,timestamp, timestampTrailer,
                               prefixColor,prefix,separator,
@@ -252,7 +253,7 @@ void Warn( NSString *msg, ... )
 
 
 /*
- Copyright (c) 2008, Jens Alfke <jens@mooseyard.com>. All rights reserved.
+ Copyright (c) 2008-2013, Jens Alfke <jens@mooseyard.com>. All rights reserved.
  
  Redistribution and use in source and binary forms, with or without modification, are permitted
  provided that the following conditions are met:
