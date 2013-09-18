@@ -26,29 +26,10 @@
 
 
 void MYAfterDelay( NSTimeInterval delay, void (^block)() ) {
-#ifndef GNUSTEP
-    NSOperationQueue* queue = [NSOperationQueue currentQueue];
-    if (queue && ![NSThread isMainThread]) {
-        // Can't just call the block directly, because then it won't be running under the control
-        // of the operation queue when it's called. So instead, create another block that tells
-        // the queue to run the block, then run that...
-        block = ^{
-            [queue addOperationWithBlock: block];
-        };
-        if (delay > 0) {
-            dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC));
-            dispatch_after(popTime, dispatch_get_current_queue(), block);
-        } else {
-            dispatch_async(dispatch_get_current_queue(), block);
-        }
-    } else
-#endif
-    {
-        block = [[block copy] autorelease];
-        [block performSelector: @selector(my_run_as_block)
-                    withObject: nil
-                    afterDelay: delay];
-    }
+    block = [[block copy] autorelease];
+    [block performSelector: @selector(my_run_as_block)
+                withObject: nil
+                afterDelay: delay];
 }
 
 id MYAfterDelayInModes( NSTimeInterval delay, NSArray* modes, void (^block)() ) {
