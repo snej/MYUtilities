@@ -213,31 +213,24 @@ static BOOL CheckCoverage(const char* testName) {
 #pragma mark ASSERTION FAILURE HANDLER:
 
 
-void _AssertFailed( id rcvr, const void *selOrFn, const char *sourceFile, int sourceLine,
+void _AssertFailed(const void *selOrFn, const char *sourceFile, int sourceLine,
                     const char *condString, NSString *message, ... )
 {
     if( message ) {
         va_list args;
         va_start(args,message);
         message = [[[NSString alloc] initWithFormat: message arguments: args] autorelease];
+        NSLog(@"*** ASSERTION FAILED: %@", message);
         message = [@"Assertion failed: " stringByAppendingString: message];
         va_end(args);
-    } else
+    } else {
         message = [NSString stringWithUTF8String: condString];
-    
-    NSLog(@"*** ASSERTION FAILED: %@", message);
-    
-    if( rcvr )
-        [[NSAssertionHandler currentHandler] handleFailureInMethod: (SEL)selOrFn
-                                                            object: rcvr 
-                                                              file: [NSString stringWithUTF8String: sourceFile]
-                                                        lineNumber: sourceLine 
-                                                       description: @"%@", message];
-    else
-        [[NSAssertionHandler currentHandler] handleFailureInFunction: [NSString stringWithUTF8String:selOrFn]
-                                                                file: [NSString stringWithUTF8String: sourceFile]
-                                                          lineNumber: sourceLine 
-                                                         description: @"%@", message];
+        NSLog(@"*** ASSERTION FAILED: %@", message);
+    }
+    [[NSAssertionHandler currentHandler] handleFailureInFunction: [NSString stringWithUTF8String:selOrFn]
+                                                            file: [NSString stringWithUTF8String: sourceFile]
+                                                      lineNumber: sourceLine
+                                                     description: @"%@", message];
     abort(); // unreachable, but appeases compiler
 }
 
@@ -248,6 +241,73 @@ void _AssertAbstractMethodFailed( id rcvr, SEL cmd)
                 format: @"Class %@ forgot to implement abstract method %@",
                          [rcvr class], NSStringFromSelector(cmd)];
     abort(); // unreachable, but appeases compiler
+}
+
+
+static NSString* WhyUnequalArrays(NSArray* a, NSArray* b, NSString* indent) {
+    indent = [indent stringByAppendingString: @"\t"];
+    NSMutableString* out = [NSMutableString stringWithString: @"Unequal NSArrays:"];
+    NSUInteger na = a.count, nb = b.count, n = MAX(na, nb);
+    for (NSUInteger i = 0; i < n; i++) {
+        id aa = (i < na) ? a[i] : nil;
+        id bb = (i < nb) ? b[i] : nil;
+        NSString* diff = WhyUnequalObjects(aa, bb, indent);
+        if (diff)
+            [out appendFormat: @"\n%@%u: %@", indent, (unsigned)i, diff];
+    }
+    return out;
+}
+
+
+static NSString* WhyUnequalDictionaries(NSDictionary* a, NSDictionary* b, NSString* indent) {
+    indent = [indent stringByAppendingString: @"\t"];
+    NSMutableString* out = [NSMutableString stringWithString: @"Unequal NSDictionaries:"];
+    for (id key in a) {
+        NSString* diff = WhyUnequalObjects(a[key], b[key], indent);
+        if (diff)
+            [out appendFormat: @"\n%@%@: %@", indent, [key my_compactDescription], diff];
+    }
+    for (id key in b) {
+        if (!a[key]) {
+            NSString* diff = WhyUnequalObjects(a[key], b[key], indent);
+            [out appendFormat: @"\n%@%@: %@", indent, [key my_compactDescription], diff];
+        }
+    }
+    return out;
+}
+
+
+NSString* WhyUnequalObjects(id a, id b, NSString* indent) {
+    if ($equal(a, b))
+        return nil;
+    if (indent == nil)
+        indent = @"";
+    if ([a isKindOfClass: [NSDictionary class]]) {
+        if ([b isKindOfClass: [NSDictionary class]]) {
+            return WhyUnequalDictionaries(a, b, indent);
+        }
+    } else if ([a isKindOfClass: [NSArray class]]) {
+        if ([b isKindOfClass: [NSArray class]]) {
+            return WhyUnequalArrays(a, b, indent);
+        }
+    }
+
+    return $sprintf(@"%@  ≠  %@", [a my_compactDescription], [b my_compactDescription]);
+}
+
+
+void _AssertEqual(id val, id expected, const char* valExpr,
+                  const char* selOrFn, const char* sourceFile, int sourceLine) {
+    if ($equal(val, expected))
+        return;
+    NSString* diff = WhyUnequalObjects(val, expected, nil);
+    if ([diff rangeOfString: @"\n"].length > 0) {
+        // If diff is multi-line, log it but don't put it in the assertion message
+        NSLog(@"\n*** Actual vs. expected value of %s :%@\n", valExpr, diff);
+        diff = @"(see above)";
+    }
+    _AssertFailed(selOrFn, sourceFile, sourceLine, valExpr, @"Unexpected value of %s: %@",
+                  valExpr, diff);
 }
 
 

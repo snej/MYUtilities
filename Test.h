@@ -59,36 +59,35 @@ void _RequireTestCase( const char *name );
 /** General-purpose assertions, replacing NSAssert etc.. You can use these outside test cases. */
 
 #define Assert(COND,MSG...)    do{ if( __builtin_expect(!(COND),NO) ) { \
-                                    _AssertFailed(self,_cmd, __FILE__, __LINE__,\
-                                                        #COND,##MSG,NULL); } }while(0)
-#define CAssert(COND,MSG...)    do{ if( __builtin_expect(!(COND),NO) ) { \
-                                    static const char *_name = __PRETTY_FUNCTION__;\
-                                    _AssertFailed(nil, _name, __FILE__, __LINE__,\
+                                    _AssertFailed(__func__, __FILE__, __LINE__,\
                                                         #COND,##MSG,NULL); } }while(0)
 
 // AssertEqual is for Obj-C objects
-#define AssertEqual(VAL,EXPECTED)   do{ id _val = VAL, _expected = EXPECTED;\
-                                        Assert(_val==_expected || [_val isEqual: _expected], @"Unexpected value for %s: %@ (expected %@)", #VAL,_val,_expected); \
-                                    }while(0)
-#define CAssertEqual(VAL,EXPECTED)  do{ id _val = (VAL), _expected = (EXPECTED);\
-                                        CAssert(_val==_expected || [_val isEqual: _expected], @"Unexpected value for %s: %@ (expected %@)", #VAL,_val,_expected); \
-                                    }while(0)
+#define AssertEqual(VAL,EXPECTED)   _AssertEqual((VAL),(EXPECTED), #VAL, __func__, __FILE__, __LINE__)
 
 // AssertEq is for scalars (int, float...)
 #define AssertEq(VAL,EXPECTED)  do{ __typeof(VAL) _val = VAL; __typeof(EXPECTED) _expected = EXPECTED;\
                                     Assert(_val==_expected, @"Unexpected value for %s: %@ (expected %@)", #VAL,$object(_val),$object(_expected)); \
                                 }while(0)
-#define CAssertEq(VAL,EXPECTED) do{ __typeof(VAL) _val = VAL; __typeof(EXPECTED) _expected = EXPECTED;\
-                                    CAssert(_val==_expected, @"Unexpected value for %s: %@ (expected %@)", #VAL,$object(_val),$object(_expected)); \
-                                }while(0)
-#define CAssertAlmostEq(N1,N2, TOL) CAssert(fabs((N1) - (N2)) < (TOL), \
-                                        @"Got %.9f, expected %.9f", (N1), (N2));
+#define AssertAlmostEq(N1,N2, TOL) CAssert(fabs((N1) - (N2)) < (TOL), \
+@"Got %.9f, expected %.9f", (N1), (N2));
 
-#define AssertNil(VAL)          AssertEq((VAL),nil)
-#define CAssertNil(VAL)         CAssertEq((VAL),(id)nil)  // ARC is picky about the type of nil here
-#define CAssertNull(VAL)        CAssertEq((VAL),NULL)
+#define AssertNil(VAL)          AssertEq((VAL),(id)nil)
+#define AssertNull(VAL)         AssertEq((VAL),NULL)
 
 #define AssertAbstractMethod()  _AssertAbstractMethodFailed(self,_cmd);
+
+// These were for use in functions; not necessary anymore
+#define CAssert Assert
+#define CAssertEqual AssertEqual
+#define CAssertEq AssertEq
+#define CAssertNil AssertNil
+#define CAssertNull AssertNull
+
+
+// Returns a string summarizing why a and b are not equal; or nil if they are equal.
+// Descends into NSArrays and NSDictionaries to identify mismatched items.
+NSString* WhyUnequalObjects(id a, id b, NSString* indent);
 
 
 /** Simple test-coverage helpers:
@@ -131,7 +130,9 @@ void _RunTestCase( void (*testptr)(), const char *name );
 struct TestCaseLink {void (*testptr)(); const char *name; BOOL passed; struct TestCaseLink *next;};
 extern struct TestCaseLink *gAllTestCases;
 #endif // DEBUG
-void _AssertFailed( id rcvr, const void *selOrFn, const char *sourceFile, int sourceLine,
+void _AssertEqual(id val, id expected, const char* valExpr,
+                  const char* selOrFn, const char* sourceFile, int sourceLine);
+void _AssertFailed(const void *selOrFn, const char *sourceFile, int sourceLine,
                    const char *condString, NSString *message, ... ) __attribute__((noreturn));
 void _AssertAbstractMethodFailed( id rcvr, SEL cmd) __attribute__((noreturn));
 BOOL _Cover(const char *sourceFile, int sourceLine, const char*testName, const char *testSource, BOOL whichWay);

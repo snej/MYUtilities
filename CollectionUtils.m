@@ -279,6 +279,16 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @end
 
 
+@implementation NSString (MYUtils)
+
+- (NSString*) my_compactDescription
+{
+    return $sprintf(@"\"%@\"", self);
+}
+
+@end
+
+
 @implementation NSArray (MYUtils)
 
 - (BOOL) my_containsObjectIdenticalTo: (id)object
@@ -412,8 +422,8 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
         else
             [desc appendString: @", "];
         id value = [self objectForKey: key];
-        [desc appendString: [key description]];
-        [desc appendString: @"= "];
+        [desc appendString: [key my_compactDescription]];
+        [desc appendString: @": "];
         [desc appendString: [value my_compactDescription]];
     }
     [desc appendString: @"}"];
