@@ -87,7 +87,8 @@ void _RequireTestCase( const char *name );
 
 // Returns a string summarizing why a and b are not equal; or nil if they are equal.
 // Descends into NSArrays and NSDictionaries to identify mismatched items.
-NSString* WhyUnequalObjects(id a, id b, NSString* indent);
+// Considers NSNumbers equal if the difference is small enough to be rounding error.
+NSString* WhyUnequalObjects(id a, id b);
 
 
 /** Simple test-coverage helpers:

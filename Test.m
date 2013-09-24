@@ -244,14 +244,16 @@ void _AssertAbstractMethodFailed( id rcvr, SEL cmd)
 }
 
 
-static NSString* WhyUnequalArrays(NSArray* a, NSArray* b, NSString* indent) {
+static NSString* _WhyUnequalObjects(id a, id b, NSString* indent, BOOL *inequal);
+
+static NSString* WhyUnequalArrays(NSArray* a, NSArray* b, NSString* indent, BOOL *inequal) {
     indent = [indent stringByAppendingString: @"\t"];
     NSMutableString* out = [NSMutableString stringWithString: @"Unequal NSArrays:"];
     NSUInteger na = a.count, nb = b.count, n = MAX(na, nb);
     for (NSUInteger i = 0; i < n; i++) {
         id aa = (i < na) ? a[i] : nil;
         id bb = (i < nb) ? b[i] : nil;
-        NSString* diff = WhyUnequalObjects(aa, bb, indent);
+        NSString* diff = _WhyUnequalObjects(aa, bb, indent, inequal);
         if (diff)
             [out appendFormat: @"\n%@%u: %@", indent, (unsigned)i, diff];
     }
@@ -259,17 +261,17 @@ static NSString* WhyUnequalArrays(NSArray* a, NSArray* b, NSString* indent) {
 }
 
 
-static NSString* WhyUnequalDictionaries(NSDictionary* a, NSDictionary* b, NSString* indent) {
+static NSString* WhyUnequalDictionaries(NSDictionary* a, NSDictionary* b, NSString* indent, BOOL *inequal) {
     indent = [indent stringByAppendingString: @"\t"];
     NSMutableString* out = [NSMutableString stringWithString: @"Unequal NSDictionaries:"];
     for (id key in a) {
-        NSString* diff = WhyUnequalObjects(a[key], b[key], indent);
+        NSString* diff = _WhyUnequalObjects(a[key], b[key], indent, inequal);
         if (diff)
             [out appendFormat: @"\n%@%@: %@", indent, [key my_compactDescription], diff];
     }
     for (id key in b) {
         if (!a[key]) {
-            NSString* diff = WhyUnequalObjects(a[key], b[key], indent);
+            NSString* diff = _WhyUnequalObjects(a[key], b[key], indent, inequal);
             [out appendFormat: @"\n%@%@: %@", indent, [key my_compactDescription], diff];
         }
     }
@@ -277,22 +279,38 @@ static NSString* WhyUnequalDictionaries(NSDictionary* a, NSDictionary* b, NSStri
 }
 
 
-NSString* WhyUnequalObjects(id a, id b, NSString* indent) {
+static NSString* _WhyUnequalObjects(id a, id b, NSString* indent, BOOL *inequal) {
     if ($equal(a, b))
         return nil;
     if (indent == nil)
         indent = @"";
     if ([a isKindOfClass: [NSDictionary class]]) {
         if ([b isKindOfClass: [NSDictionary class]]) {
-            return WhyUnequalDictionaries(a, b, indent);
+            return WhyUnequalDictionaries(a, b, indent, inequal);
         }
     } else if ([a isKindOfClass: [NSArray class]]) {
         if ([b isKindOfClass: [NSArray class]]) {
-            return WhyUnequalArrays(a, b, indent);
+            return WhyUnequalArrays(a, b, indent, inequal);
+        }
+    } else if ([a isKindOfClass: [NSNumber class]]) {
+        if ([b isKindOfClass: [NSNumber class]]) {
+            double na = [a doubleValue], nb = [b doubleValue];
+            if (fabs(na-nb)/fmax(fabs(na),fabs(nb)) < 1.0e-6)
+                return nil; // numbers are equal within rounding error
         }
     }
 
+    *inequal = YES;
     return $sprintf(@"%@  ≠  %@", [a my_compactDescription], [b my_compactDescription]);
+}
+
+
+NSString* WhyUnequalObjects(id a, id b) {
+    BOOL inequal = NO;
+    NSString* why = _WhyUnequalObjects(a, b, nil, &inequal);
+    if (!inequal)
+        why = nil;
+    return why;
 }
 
 
@@ -300,7 +318,9 @@ void _AssertEqual(id val, id expected, const char* valExpr,
                   const char* selOrFn, const char* sourceFile, int sourceLine) {
     if ($equal(val, expected))
         return;
-    NSString* diff = WhyUnequalObjects(val, expected, nil);
+    NSString* diff = WhyUnequalObjects(val, expected);
+    if (!diff)
+        return; // they're "equal-ish"
     if ([diff rangeOfString: @"\n"].length > 0) {
         // If diff is multi-line, log it but don't put it in the assertion message
         NSLog(@"\n*** Actual vs. expected value of %s :%@\n", valExpr, diff);
