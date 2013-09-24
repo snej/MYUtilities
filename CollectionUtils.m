@@ -457,6 +457,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @end
 
 
+#if NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
 @interface MYMappedEnumerator : NSEnumerator
 {
     NSEnumerator* _source;
@@ -503,7 +504,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 }
 
 @end
-
+#endif // NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
 
 
 
@@ -536,12 +537,14 @@ TestCase(CollectionUtils) {
                         @"a C string",                                  @"cstr",
                         nil];
     CAssertEqual(d,dd);
-    
+
+#if NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
     NSEnumerator* source = [$array(@"teenage", @"mutant", @"ninja", @"turtles") objectEnumerator];
     NSEnumerator* mapped = [source my_map: ^id(NSString* str) {
         return [str hasPrefix: @"t"] ? [str uppercaseString] : nil;
     }];
     CAssertEqual(mapped.allObjects, $array(@"TEENAGE", @"TURTLES"));
+#endif
 }
 
 
