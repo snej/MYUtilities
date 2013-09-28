@@ -115,9 +115,11 @@ NSString* WhyUnequalObjects(id a, id b);
 #if DEBUG
 #define TestedBy(TEST_NAME) static const char* __unused kTestedBy = #TEST_NAME; \
             extern void Test_##TEST_NAME(void); __unused void* x = &Test_##TEST_NAME
-#define Cover(CONDITION) ({BOOL _b=!!(CONDITION); \
-                           _Cover(__FILE__, __LINE__, kTestedBy, #CONDITION, _b); \
-                           _b;})
+#define Cover(CONDITION) ({ \
+    BOOL _b=!!(CONDITION); \
+    if (__builtin_expect(gRunningTestCase,NO)) \
+        _Cover(__FILE__, __LINE__, kTestedBy, #CONDITION, _b); \
+    _b;})
 #else
 #define TestedBy(TEST_NAME)
 #define Cover(CONDITION) (CONDITION)
