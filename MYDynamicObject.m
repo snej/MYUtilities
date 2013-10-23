@@ -102,6 +102,46 @@ static void setIntProperty(MYDynamicObject *self, SEL _cmd, int value) {
     setIdProperty(self, _cmd, [NSNumber numberWithInt:value]);
 }
 
+static unsigned int getIntProperty(MYDynamicObject *self, SEL _cmd) {
+    return [getIdProperty(self,_cmd) unsignedIntValue];
+}
+
+static void setUnsignedIntProperty(MYDynamicObject *self, SEL _cmd, unsigned int value) {
+    setIdProperty(self, _cmd, [NSNumber numberWithUnsignedInt:value]);
+}
+
+static long getLongProperty(MYDynamicObject *self, SEL _cmd) {
+    return [getIdProperty(self,_cmd) longValue];
+}
+
+static void setLongProperty(MYDynamicObject *self, SEL _cmd, long value) {
+    setIdProperty(self, _cmd, [NSNumber numberWithLong:value]);
+}
+
+static unsigned long getUnsignedLongProperty(MYDynamicObject *self, SEL _cmd) {
+    return [getIdProperty(self,_cmd) unsignedLongValue];
+}
+
+static void setUnsignedLongProperty(MYDynamicObject *self, SEL _cmd, unsigned long value) {
+    setIdProperty(self, _cmd, [NSNumber numberWithUnsignedLong:value]);
+}
+
+static long long getLongProperty(MYDynamicObject *self, SEL _cmd) {
+    return [getIdProperty(self,_cmd) longLongValue];
+}
+
+static void setLongLongProperty(MYDynamicObject *self, SEL _cmd, long long value) {
+    setIdProperty(self, _cmd, [NSNumber numberWithLongLong:value]);
+}
+
+static unsigned long long getUnsignedLongProperty(MYDynamicObject *self, SEL _cmd) {
+    return [getIdProperty(self,_cmd) unsignedLongLongValue];
+}
+
+static void setUnsignedLongProperty(MYDynamicObject *self, SEL _cmd, unsigned long long value) {
+    setIdProperty(self, _cmd, [NSNumber numberWithUnsignedLongLong:value]);
+}
+
 static bool getBoolProperty(MYDynamicObject *self, SEL _cmd) {
     return [getIdProperty(self,_cmd) boolValue];
 }
@@ -270,6 +310,46 @@ static Class classFromType(const char* propertyType) {
 #else
             return (IMP)getIntProperty;
 #endif
+        case _C_UINT:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^unsigned int(MYDynamicObject* receiver) {
+                return [[receiver getValueOfProperty: property] unsignedIntValue];
+            });
+#else
+            return (IMP)getUnsignedIntProperty;
+#endif
+        case _C_LNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^long(MYDynamicObject* receiver) {
+                return [[receiver getValueOfProperty: property] longValue];
+            });
+#else
+            return (IMP)getLongProperty;
+#endif
+        case _C_ULNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^unsigned long(MYDynamicObject* receiver) {
+                return [[receiver getValueOfProperty: property] unsignedLongValue];
+            });
+#else
+            return (IMP)getUnsignedLongProperty;
+#endif
+        case _C_LNG_LNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^long long(MYDynamicObject* receiver) {
+                return [[receiver getValueOfProperty: property] longLongValue];
+            });
+#else
+            return (IMP)getLongLongProperty;
+#endif
+        case _C_ULNG_LNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^unsigned long long(MYDynamicObject* receiver) {
+                return [[receiver getValueOfProperty: property] unsignedLongLongValue];
+            });
+#else
+            return (IMP)getUnsignedLongLongProperty;
+#endif
         case _C_BOOL:
 #if USE_BLOCKS
             return imp_implementationWithBlock(^bool(MYDynamicObject* receiver) {
@@ -307,6 +387,46 @@ static Class classFromType(const char* propertyType) {
             });
 #else
             return (IMP)setIntProperty;
+#endif
+        case _C_UINT:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^(MYDynamicObject* receiver, unsigned int value) {
+                setIdProperty(receiver, property, [NSNumber numberWithUnsignedInt: value]);
+            });
+#else
+            return (IMP)setUnsignedIntProperty;
+#endif
+        case _C_LNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^(MYDynamicObject* receiver, long value) {
+                setIdProperty(receiver, property, [NSNumber numberWithLong: value]);
+            });
+#else
+            return (IMP)setLongProperty;
+#endif
+        case _C_ULNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^(MYDynamicObject* receiver, unsigned long value) {
+                setIdProperty(receiver, property, [NSNumber numberWithUnsignedLong: value]);
+            });
+#else
+            return (IMP)setUnsignedLongProperty;
+#endif
+        case _C_LNG_LNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^(MYDynamicObject* receiver, long long value) {
+                setIdProperty(receiver, property, [NSNumber numberWithLongLong: value]);
+            });
+#else
+            return (IMP)setLongLongProperty;
+#endif
+        case _C_ULNG_LNG:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^(MYDynamicObject* receiver, unsigned long long value) {
+                setIdProperty(receiver, property, [NSNumber numberWithUnsignedLongLong: value]);
+            });
+#else
+            return (IMP)setUnsignedLongLongProperty;
 #endif
         case _C_BOOL:           // This is the true native C99/C++ "bool" type
 #if USE_BLOCKS
