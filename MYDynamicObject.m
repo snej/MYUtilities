@@ -159,6 +159,15 @@ static void setDoubleProperty(MYDynamicObject *self, SEL _cmd, double value) {
     setIdProperty(self, _cmd, [NSNumber numberWithDouble:value]);
 }
 
+static float getFloatProperty(MYDynamicObject *self, SEL _cmd) {
+    id number = getIdProperty(self,_cmd);
+    return number ?[number floatValue] :0.0;
+}
+
+static void setFloatProperty(MYDynamicObject *self, SEL _cmd, float value) {
+    setIdProperty(self, _cmd, [NSNumber numberWithFloat:value]);
+}
+
 #endif // USE_BLOCKS
 
 
@@ -358,6 +367,14 @@ static Class classFromType(const char* propertyType) {
 #else
             return (IMP)getBoolProperty;
 #endif
+        case _C_FLT:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^float(MYDynamicObject* receiver) {
+                return [[receiver getValueOfProperty: property] floatValue];
+            });
+#else
+            return (IMP)getFloatProperty;
+#endif
         case _C_DBL:
 #if USE_BLOCKS
             return imp_implementationWithBlock(^double(MYDynamicObject* receiver) {
@@ -367,7 +384,6 @@ static Class classFromType(const char* propertyType) {
             return (IMP)getDoubleProperty;
 #endif
         default:
-            // TODO: handle more scalar property types.
             return NULL;
     }
 }
@@ -436,6 +452,14 @@ static Class classFromType(const char* propertyType) {
 #else
             return (IMP)setBoolProperty;
 #endif
+        case _C_FLT:
+#if USE_BLOCKS
+            return imp_implementationWithBlock(^(MYDynamicObject* receiver, float value) {
+                setIdProperty(receiver, property, [NSNumber numberWithFloat: value]);
+            });
+#else
+            return (IMP)setFloatProperty;
+#endif
         case _C_DBL:
 #if USE_BLOCKS
             return imp_implementationWithBlock(^(MYDynamicObject* receiver, double value) {
@@ -445,7 +469,6 @@ static Class classFromType(const char* propertyType) {
             return (IMP)setDoubleProperty;
 #endif
         default:
-            // TODO: handle more scalar property types.
             return NULL;
     }
 }
