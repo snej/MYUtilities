@@ -57,18 +57,19 @@ NS_INLINE NSString *getterKey(SEL sel) {
 }
 
 // converts a setter selector, of the form "set<Key>:" to an NSString of the form @"<key>".
-NS_INLINE NSString *setterKey(SEL sel) {
+NS_INLINE NSString *setterKey(SEL sel, BOOL upperCase) {
     const char* name = sel_getName(sel) + 3; // skip past 'set'
     size_t length = strlen(name);
     char buffer[1 + length];
     strcpy(buffer, name);
-    buffer[0] = (char)tolower(buffer[0]);  // lowercase the property name
+    if (!upperCase)
+        buffer[0] = (char)tolower(buffer[0]);  // lowercase the property name
     buffer[length - 1] = '\0';       // and remove the ':'
     return [NSString stringWithUTF8String:buffer];
 }
 
 + (NSString*) getterKey: (SEL)sel   {return getterKey(sel);}
-+ (NSString*) setterKey: (SEL)sel   {return setterKey(sel);}
++ (NSString*) setterKey: (SEL)sel   {return setterKey(sel, NO);}
 
 
 
@@ -89,7 +90,7 @@ static id getIdProperty(MYDynamicObject *self, SEL _cmd) {
 }
 
 static void setIdProperty(MYDynamicObject *self, SEL _cmd, id value) {
-    NSString* property = setterKey(_cmd);
+    NSString* property = setterKey(_cmd, NO);
     BOOL result = [self setValue: value ofProperty: property];
     NSCAssert(result, @"Property %@.%@ is not settable", [self class], property);
 }
@@ -486,11 +487,14 @@ static Class classFromType(const char* propertyType) {
     
     if (isSetter(name)) {
         // choose an appropriately typed generic setter function.
-        key = setterKey(sel);
-        if (getPropertyInfo(self, key, YES, &declaredInClass, &propertyType)) {
-            strcpy(signature, "v@: ");
-            signature[3] = propertyType[0];
-            accessor = [self impForSetterOfProperty: key ofType: propertyType];
+        for (int upperCase=NO; upperCase<=YES; upperCase++) {
+            key = setterKey(sel, (BOOL)upperCase);
+            if (getPropertyInfo(self, key, YES, &declaredInClass, &propertyType)) {
+                strcpy(signature, "v@: ");
+                signature[3] = propertyType[0];
+                accessor = [self impForSetterOfProperty: key ofType: propertyType];
+                break;
+            }
         }
     } else if (isGetter(name)) {
         // choose an appropriately typed getter function.
