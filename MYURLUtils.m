@@ -3,7 +3,7 @@
 //  MYUtilities
 //
 //  Created by Jens Alfke on 5/15/12.
-//  Copyright (c) 2012 Couchbase, Inc. All rights reserved.
+//  Copyright (c) 2012 Jens Alfke. All rights reserved.
 //
 
 #import "MYURLUtils.h"
