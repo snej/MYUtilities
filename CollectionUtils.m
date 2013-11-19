@@ -359,6 +359,21 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 
 
 
+#if NS_BLOCKS_AVAILABLE
+@implementation NSMutableArray (MYUtils)
+
+- (void) my_removeMatching: (int (^)(id obj))block {
+    for (NSInteger i = self.count - 1; i >= 0; --i) {
+        if (!block([self objectAtIndex: i]))
+            [self removeObjectAtIndex: i];
+    }
+}
+
+@end
+#endif
+
+
+
 
 @implementation NSSet (MYUtils)
 
