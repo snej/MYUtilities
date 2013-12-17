@@ -44,3 +44,4 @@ void MYSetExceptionReporter( void (*reporter)(NSException*) );
 
 
 BOOL IsGDBAttached( void );
+void MYBreakpoint();

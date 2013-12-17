@@ -14,6 +14,7 @@
 
 #include <sys/sysctl.h>
 #include <unistd.h>
+#include <pthread.h>
 
 
 #ifndef Warn
@@ -168,6 +169,11 @@ BOOL IsGDBAttached( void )
     }
     return (kp.kp_proc.p_flag & P_TRACED) != 0;
 #endif
+}
+
+
+void MYBreakpoint() {
+    pthread_kill(pthread_self(), SIGINT);
 }
 
 
