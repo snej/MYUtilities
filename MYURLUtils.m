@@ -115,6 +115,22 @@
 }
 
 
+- (NSDictionary*) my_proxySettings {
+    CFDictionaryRef proxySettings = CFNetworkCopySystemProxySettings();
+    if (!proxySettings)
+        return nil;
+    NSArray* proxies = CFBridgingRelease(CFNetworkCopyProxiesForURL((__bridge CFURLRef)self,
+                                                                    proxySettings));
+    CFRelease(proxySettings);
+    if (proxies.count == 0)
+        return nil;
+    NSDictionary* proxy = proxies[0];
+    if ($equal(proxy[(id)kCFProxyTypeKey], (id)kCFProxyTypeNone))
+        return nil;
+    return proxy;
+}
+
+
 - (NSString*) my_sanitizedString {
     TestedBy(MYURLUtils);
     CFRange passRange = CFURLGetByteRangeForComponent((CFURLRef)self, kCFURLComponentPassword, NULL);

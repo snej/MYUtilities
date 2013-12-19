@@ -46,4 +46,8 @@ static inline NSURL* $url(NSString* str) {
 - (NSURLCredential*) my_credentialForRealm: (NSString*)realm
                       authenticationMethod: (NSString*)authenticationMethod;
 
+/** Proxy configuration settings for this URL, or nil if none are in effect.
+    Keys in this dictionary are defined in CFProxySupport.h. */
+@property (readonly) NSDictionary* my_proxySettings;
+
 @end
