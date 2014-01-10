@@ -19,6 +19,7 @@ static int sPassed, sFailed;
 static NSMutableArray* sFailedTestNames;
 static struct TestCaseLink *sCurrentTest;
 static int sCurTestCaseExceptions;
+static NSXMLElement* sReportXML;
 
 static BOOL CheckCoverage(const char* testName);
 
@@ -27,6 +28,28 @@ static void TestCaseExceptionReporter( NSException *x ) {
     sCurTestCaseExceptions++;
     fflush(stderr);
     Log(@"XXX FAILED test case -- backtrace:\n%@\n\n", x.my_callStack);
+}
+
+static void ReportTestCase(struct TestCaseLink *test, NSString* failureType, NSString* failureMessage) {
+    if (!sReportXML)
+        return;
+    NSString* name = [NSString stringWithUTF8String: test->name];
+    NSXMLElement* testcase = [NSXMLElement elementWithName: @"testcase"];
+    [testcase setAttributesWithDictionary: @{@"name": name,
+                                             @"classname": name}];
+    if ($equal(failureType, @"skipped")) {
+        NSXMLElement* skipped = [NSXMLElement elementWithName: @"skipped"];
+        if (failureMessage)
+            skipped.stringValue = failureMessage;
+        [testcase addChild: skipped];
+    } else if (failureType != nil) {
+        NSXMLElement* failure = [NSXMLElement elementWithName: @"failure"];
+        [failure setAttributesWithDictionary: @{@"type": failureType}];
+        if (failureMessage)
+            [failure setStringValue: failureMessage];
+        [testcase addChild: failure];
+    }
+    [sReportXML addChild: testcase];
 }
 
 static void RecordFailedTest( struct TestCaseLink *test ) {
@@ -58,25 +81,40 @@ static BOOL RunTestCase( struct TestCaseLink *test )
 
         if (!CheckCoverage(test->name)) {
             Log(@"XXX FAILED test case '%s' due to coverage failures", test->name);
+            sFailed++;
+            RecordFailedTest(test);
+            ReportTestCase(test, @"coverage", nil);
         } else if( sCurTestCaseExceptions > 0 ) {
             Log(@"XXX FAILED test case '%s' due to %i exception(s) already reported above",
                 test->name,sCurTestCaseExceptions);
             sFailed++;
             RecordFailedTest(test);
+            ReportTestCase(test, @"exception", $sprintf(@"%d exception(s) already caught",
+                                                        sCurTestCaseExceptions));
         } else {
             Log(@"√√√ %s passed\n\n",test->name);
             test->passed = YES;
             sPassed++;
+            ReportTestCase(test, nil, nil);
         }
     }@catch( NSException *x ) {
-        if( [x.name isEqualToString: @"TestCaseSkipped"] )
+        if( [x.name isEqualToString: @"TestCaseSkipped"] ) {
             Log(@"... skipping test %s since %@\n\n", test->name, x.reason);
-        else {
+            ReportTestCase(test, @"skipped", x.reason);
+        } else {
             fflush(stderr);
             Log(@"XXX FAILED test case '%s' due to:\nException: %@\n%@\n\n", 
                   test->name,x,x.my_callStack);
             sFailed++;
             RecordFailedTest(test);
+            NSString* failureType = x.name;
+            NSString* reason = x.reason;
+            if ([failureType isEqualToString: NSInternalInconsistencyException])
+                if ([reason hasPrefix: @"Assertion failed: "]) {
+                    failureType = @"assertion";
+                    reason = [reason substringFromIndex: 18];
+                }
+            ReportTestCase(test, failureType, reason);
         }
     }@finally{
         [pool drain];
@@ -120,17 +158,37 @@ void _RequireTestCase( const char *name )
 }
 
 
+static void WriteReport(NSString* filename) {
+    // See http://stackoverflow.com/a/4925847/98077
+    [sReportXML setAttributesWithDictionary: @{@"tests": $sprintf(@"%u", (unsigned)sReportXML.childCount),
+                                               @"failures": $sprintf(@"%d", sFailed)}];
+    NSXMLDocument* doc = [NSXMLDocument documentWithRootElement: sReportXML];
+    doc.documentContentKind = NSXMLDocumentXMLKind;
+    doc.characterEncoding = @"UTF-8";
+    doc.version = @"1.0";
+    doc.standalone = YES;
+    NSData* output = [doc XMLDataWithOptions: NSXMLDocumentIncludeContentTypeDeclaration |
+                                              NSXMLNodeCompactEmptyElement |
+                                              NSXMLNodePrettyPrint];
+    [output writeToFile: filename options: NSDataWritingAtomic error: NULL];
+}
+
+
 void RunTestCases( int argc, const char **argv )
 {
     sPassed = sFailed = 0;
     sFailedTestNames = nil;
     BOOL stopAfterTests = NO;
+    sReportXML = [NSXMLElement elementWithName: @"testsuite"];
+    BOOL writeReport = NO;
     for( int i=1; i<argc; i++ ) {
         const char *arg = argv[i];
         if( strncmp(arg,"Test_",5)==0 ) {
             arg += 5;
             if( strcmp(arg,"Only")==0 )
                 stopAfterTests = YES;
+            else if( strcmp(arg,"Report")==0 )
+                writeReport = YES;
             else if( strcmp(arg,"All") == 0 ) {
                 for( struct TestCaseLink *link = gAllTestCases; link; link=link->next )
                     RunTestCase(link);
@@ -143,6 +201,8 @@ void RunTestCases( int argc, const char **argv )
         CheckCoverage("");
     if( sPassed>0 || sFailed>0 || stopAfterTests ) {
         NSAutoreleasePool *pool = [NSAutoreleasePool new];
+        if (writeReport)
+            WriteReport(@"test_report.xml");//TEMP
         if( sFailed==0 )
             AlwaysLog(@"√√√√√√ ALL %i TESTS PASSED √√√√√√", sPassed);
         else {
@@ -159,6 +219,8 @@ void RunTestCases( int argc, const char **argv )
     }
     [sFailedTestNames release];
     sFailedTestNames = nil;
+    [sReportXML release];
+    sReportXML = nil;
 }
 
 

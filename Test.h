@@ -15,7 +15,8 @@
     This function is a no-op if the DEBUG macro is not defined (i.e. in a release build).
     At runtime, to cause a particular test "X" to run, add a command-line argument "Test_X".
     To run all tests, add the argument "Test_All".
-    To run only tests without starting the main program, add the argument "Test_Only". */
+    To run only tests without starting the main program, add the argument "Test_Only".
+    To generate a JUnit-compatible XML report file "test_report.xml", add "Test_Report. */
 #if DEBUG
 void RunTestCases( int argc, const char **argv );
 extern BOOL gRunningTestCase;
