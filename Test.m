@@ -31,6 +31,7 @@ static NSXMLElement* sReportXML;
 #endif
 
 static BOOL CheckCoverage(const char* testName);
+static BOOL CheckUncalledCoverage(void);
 
 
 static void TestCaseExceptionReporter( NSException *x ) {
@@ -213,7 +214,7 @@ void RunTestCases( int argc, const char **argv )
         }
     }
     if (sFailed == 0)
-        CheckCoverage("");
+        CheckUncalledCoverage();
     if( sPassed>0 || sFailed>0 || stopAfterTests ) {
         NSAutoreleasePool *pool = [NSAutoreleasePool new];
         if (writeReport) {
@@ -269,7 +270,8 @@ BOOL _Cover(const char *sourceFile, int sourceLine, const char*testName,
 
     NSArray* key = @[@(sourceFile), @(sourceLine), @(testSource)];
     int results = [cases[key] intValue];
-    results |= (whichWay ? 2 : 1);      // Bit 0 records a false result, bit 1 records true
+    if (0 == strcmp(testName, sCurrentTest->name))
+        results |= (whichWay ? 2 : 1);      // Bit 0 records a false result, bit 1 records true
     cases[key] = @(results);
     return whichWay;
 }
@@ -279,14 +281,46 @@ static BOOL CheckCoverage(const char* testName) {
     NSDictionary* cases = sCoverageByTest[@(testName)];
     for (NSArray* key in cases) {
         int results = [cases[key] intValue];
-        if (results != 3) {
+        if (results == 1 || results == 2) {
             Warn(@"Coverage: At %@:%d, only saw (%@) == %s",
                  key[0], [key[1] intValue], key[2], (results==2 ?"YES" : "NO"));
             ok = NO;
         }
     }
-    [sCoverageByTest removeObjectForKey: @(testName)];
     return ok;
+}
+
+static BOOL CheckUncalledCoverage(void) {
+    if (sCoverageByTest.count == 0)
+        return YES;
+    Log(@"=== Checking for unreached Cover() calls [UncalledCoverage] ...");
+
+    int failures = 0;
+    for (NSString* testName in sCoverageByTest) {
+        NSDictionary* cases = sCoverageByTest[testName];
+        for (NSArray* key in cases) {
+            if ([cases[key] intValue] == 0) {
+                Warn(@"Coverage: %@:%d, Cover(%@) unreached by test case %@",
+                     key[0], [key[1] intValue], key[2], testName);
+                failures++;
+            }
+        }
+    }
+
+    struct TestCaseLink testCase = {NULL, "UncalledCoverage"};
+    if (failures == 0) {
+        Log(@"√√√ All reached Cover() calls were reached during their test case\n\n");
+        sPassed++;
+        ReportTestCase(&testCase, nil, nil);
+        return YES;
+    } else {
+        NSString* message = $sprintf(@"%d Cover() calls were reached, but not during their test case", failures);
+        Log(@"XXX %@\n\n", message);
+        sFailed++;
+        RecordFailedTest(&testCase);
+        ReportTestCase(&testCase, @"coverage", message);
+        return NO;
+    }
 }
 
 

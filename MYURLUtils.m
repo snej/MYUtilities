@@ -96,19 +96,18 @@
 - (NSURLCredential*) my_credentialForRealm: (NSString*)realm
                       authenticationMethod: (NSString*)authenticationMethod
 {
-    TestedBy(MYURLUtils);
     if ($equal(authenticationMethod, NSURLAuthenticationMethodServerTrust))
         return nil;
     NSString* username = self.user;
     NSString* password = self.password;
-    if (Cover(username && password))
+    if (username && password)
         return [NSURLCredential credentialWithUser: username password: password
                                        persistence: NSURLCredentialPersistenceForSession];
     
     NSURLProtectionSpace* space = [self my_protectionSpaceWithRealm: realm
                                                authenticationMethod: authenticationMethod];
     NSURLCredentialStorage* storage = [NSURLCredentialStorage sharedCredentialStorage];
-    if (Cover(username))
+    if (username)
         return [[storage credentialsForProtectionSpace: space] objectForKey: username];
     else
         return [storage defaultCredentialForProtectionSpace: space];
@@ -160,11 +159,27 @@
 
 TestCase(MYURLUtils) {
     NSURL* url = $url(@"https://example.com/path/here?query#fragment");
+    CAssertEq(url.my_effectivePort, 443);
+    CAssertEqual(url.my_baseURL, $url(@"https://example.com"));
     CAssertEqual(url.my_URLByRemovingUser, url);
     CAssertEqual(url.my_sanitizedString, @"https://example.com/path/here?query#fragment");
+
+    url = $url(@"https://example.com:8080/path/here?query#fragment");
+    CAssertEq(url.my_effectivePort, 8080);
+    CAssertEqual(url.my_baseURL, $url(@"https://example.com:8080"));
+    CAssertEqual(url.my_URLByRemovingUser, url);
+    CAssertEqual(url.my_sanitizedString, @"https://example.com:8080/path/here?query#fragment");
+
+    CAssertEqual($url(@"http://example.com:80/path/here?query#fragment").my_baseURL,
+                 $url(@"http://example.com"));
+    CAssertEq($url(@"http://example.com:80/path/here?query#fragment").my_effectivePort, 80);
+    CAssertEqual($url(@"https://example.com:443/path/here?query#fragment").my_baseURL,
+                 $url(@"https://example.com"));
+
     url = $url(@"https://bob@example.com/path/here?query#fragment");
     CAssertEqual(url.my_URLByRemovingUser, $url(@"https://example.com/path/here?query#fragment"));
     CAssertEqual(url.my_sanitizedString, @"https://bob@example.com/path/here?query#fragment");
+
     url = $url(@"https://bob:foo@example.com/path/here?query#fragment");
     CAssertEqual(url.my_URLByRemovingUser, $url(@"https://example.com/path/here?query#fragment"));
     CAssertEqual(url.my_sanitizedString, @"https://bob:*****@example.com/path/here?query#fragment");
