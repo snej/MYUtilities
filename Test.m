@@ -19,7 +19,16 @@ static int sPassed, sFailed;
 static NSMutableArray* sFailedTestNames;
 static struct TestCaseLink *sCurrentTest;
 static int sCurTestCaseExceptions;
+
+#if TARGET_OS_IPHONE
+#define XML_REPORT 0 // iOS doesn't have NSXML
+#else
+#define XML_REPORT 1
+#endif
+
+#if XML_REPORT
 static NSXMLElement* sReportXML;
+#endif
 
 static BOOL CheckCoverage(const char* testName);
 
@@ -31,6 +40,7 @@ static void TestCaseExceptionReporter( NSException *x ) {
 }
 
 static void ReportTestCase(struct TestCaseLink *test, NSString* failureType, NSString* failureMessage) {
+#if XML_REPORT
     if (!sReportXML)
         return;
     NSString* name = [NSString stringWithUTF8String: test->name];
@@ -50,6 +60,7 @@ static void ReportTestCase(struct TestCaseLink *test, NSString* failureType, NSS
         [testcase addChild: failure];
     }
     [sReportXML addChild: testcase];
+#endif
 }
 
 static void RecordFailedTest( struct TestCaseLink *test ) {
@@ -158,6 +169,7 @@ void _RequireTestCase( const char *name )
 }
 
 
+#if XML_REPORT
 static void WriteReport(NSString* filename) {
     // See http://stackoverflow.com/a/4925847/98077
     [sReportXML setAttributesWithDictionary: @{@"tests": $sprintf(@"%u", (unsigned)sReportXML.childCount),
@@ -172,6 +184,7 @@ static void WriteReport(NSString* filename) {
                                               NSXMLNodePrettyPrint];
     [output writeToFile: filename options: NSDataWritingAtomic error: NULL];
 }
+#endif
 
 
 void RunTestCases( int argc, const char **argv )
@@ -179,7 +192,9 @@ void RunTestCases( int argc, const char **argv )
     sPassed = sFailed = 0;
     sFailedTestNames = nil;
     BOOL stopAfterTests = NO;
+#if XML_REPORT
     sReportXML = [NSXMLElement elementWithName: @"testsuite"];
+#endif
     BOOL writeReport = NO;
     for( int i=1; i<argc; i++ ) {
         const char *arg = argv[i];
@@ -201,8 +216,13 @@ void RunTestCases( int argc, const char **argv )
         CheckCoverage("");
     if( sPassed>0 || sFailed>0 || stopAfterTests ) {
         NSAutoreleasePool *pool = [NSAutoreleasePool new];
-        if (writeReport)
-            WriteReport(@"test_report.xml");//TEMP
+        if (writeReport) {
+#if XML_REPORT
+            WriteReport(@"test_report.xml");
+#else
+            Warn(@"Write_Report option is not supported on this platform");
+#endif
+        }
         if( sFailed==0 )
             AlwaysLog(@"√√√√√√ ALL %i TESTS PASSED √√√√√√", sPassed);
         else {
@@ -219,8 +239,10 @@ void RunTestCases( int argc, const char **argv )
     }
     [sFailedTestNames release];
     sFailedTestNames = nil;
+#if XML_REPORT
     [sReportXML release];
     sReportXML = nil;
+#endif
 }
 
 
