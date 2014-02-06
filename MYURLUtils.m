@@ -7,6 +7,7 @@
 //
 
 #import "MYURLUtils.h"
+#import "Test.h"
 
 
 @implementation NSURL (MYUtilities)
