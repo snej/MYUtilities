@@ -47,3 +47,11 @@
 + (IMP) impForSetterOfProperty: (NSString*)property ofType: (const char*)propertyType;
 
 @end
+
+Class classFromType(const char* propertyType);
+
+BOOL getPropertyInfo(Class cls,
+                     NSString *propertyName,
+                     BOOL setter,
+                     Class *declaredInClass,
+                     const char* *propertyType);

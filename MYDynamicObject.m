@@ -229,11 +229,11 @@ static const char* getPropertyType(objc_property_t property, BOOL *outIsSettable
 
 
 // Look up a class's property by name, and find its type and which class declared it
-static BOOL getPropertyInfo(Class cls, 
-                            NSString *propertyName, 
-                            BOOL setter,
-                            Class *declaredInClass,
-                            const char* *propertyType) {
+BOOL getPropertyInfo(Class cls,
+                     NSString *propertyName,
+                     BOOL setter,
+                     Class *declaredInClass,
+                     const char* *propertyType) {
     // Find the property declaration:
     const char *name = [propertyName UTF8String];
     objc_property_t property = class_getProperty(cls, name);
@@ -264,7 +264,7 @@ static BOOL getPropertyInfo(Class cls,
 }
 
 
-static Class classFromType(const char* propertyType) {
+Class classFromType(const char* propertyType) {
     size_t len = strlen(propertyType);
     if (propertyType[0] != _C_ID || propertyType[1] != '"' || propertyType[len-1] != '"')
         return NULL;
