@@ -202,7 +202,7 @@ static void setFloatProperty(MYDynamicObject *self, SEL _cmd, float value) {
 
 
 // Look up the encoded type of a property, and whether it's settable or readonly
-static const char* getPropertyType(objc_property_t property, BOOL *outIsSettable) {
+static const char* MYGetPropertyType(objc_property_t property, BOOL *outIsSettable) {
     *outIsSettable = YES;
     const char *result = "@";
     
@@ -229,7 +229,7 @@ static const char* getPropertyType(objc_property_t property, BOOL *outIsSettable
 
 
 // Look up a class's property by name, and find its type and which class declared it
-BOOL getPropertyInfo(Class cls,
+BOOL MYGetPropertyInfo(Class cls,
                      NSString *propertyName,
                      BOOL setter,
                      Class *declaredInClass,
@@ -254,7 +254,7 @@ BOOL getPropertyInfo(Class cls,
     
     // Get the property's type:
     BOOL isSettable;
-    *propertyType = getPropertyType(property, &isSettable);
+    *propertyType = MYGetPropertyType(property, &isSettable);
     if (setter && !isSettable) {
         // Asked for a setter, but property is readonly:
         *propertyType = NULL;
@@ -264,7 +264,7 @@ BOOL getPropertyInfo(Class cls,
 }
 
 
-Class classFromType(const char* propertyType) {
+Class MYClassFromType(const char* propertyType) {
     size_t len = strlen(propertyType);
     if (propertyType[0] != _C_ID || propertyType[1] != '"' || propertyType[len-1] != '"')
         return NULL;
@@ -277,9 +277,9 @@ Class classFromType(const char* propertyType) {
 + (Class) classOfProperty: (NSString*)propertyName {
     Class declaredInClass;
     const char* propertyType;
-    if (!getPropertyInfo(self, propertyName, NO, &declaredInClass, &propertyType))
+    if (!MYGetPropertyInfo(self, propertyName, NO, &declaredInClass, &propertyType))
         return Nil;
-    return classFromType(propertyType);
+    return MYClassFromType(propertyType);
 }
 
 
@@ -307,7 +307,7 @@ Class classFromType(const char* propertyType) {
 + (IMP) impForGetterOfProperty: (NSString*)property ofType: (const char*)propertyType {
     switch (propertyType[0]) {
         case _C_ID:
-            return [self impForGetterOfProperty: property ofClass: classFromType(propertyType)];
+            return [self impForGetterOfProperty: property ofClass: MYClassFromType(propertyType)];
         case _C_INT:
         case _C_SHT:
         case _C_USHT:
@@ -392,7 +392,7 @@ Class classFromType(const char* propertyType) {
 + (IMP) impForSetterOfProperty: (NSString*)property ofType: (const char*)propertyType {
     switch (propertyType[0]) {
         case _C_ID:
-            return [self impForSetterOfProperty: property ofClass: classFromType(propertyType)];
+            return [self impForSetterOfProperty: property ofClass: MYClassFromType(propertyType)];
         case _C_INT:
         case _C_SHT:
         case _C_USHT:
@@ -489,7 +489,7 @@ Class classFromType(const char* propertyType) {
         // choose an appropriately typed generic setter function.
         for (int upperCase=NO; upperCase<=YES; upperCase++) {
             key = setterKey(sel, (BOOL)upperCase);
-            if (getPropertyInfo(self, key, YES, &declaredInClass, &propertyType)) {
+            if (MYGetPropertyInfo(self, key, YES, &declaredInClass, &propertyType)) {
                 strcpy(signature, "v@: ");
                 signature[3] = propertyType[0];
                 accessor = [self impForSetterOfProperty: key ofType: propertyType];
@@ -499,7 +499,7 @@ Class classFromType(const char* propertyType) {
     } else if (isGetter(name)) {
         // choose an appropriately typed getter function.
         key = getterKey(sel);
-        if (getPropertyInfo(self, key, NO, &declaredInClass, &propertyType)) {
+        if (MYGetPropertyInfo(self, key, NO, &declaredInClass, &propertyType)) {
             strcpy(signature, " @:");
             signature[0] = propertyType[0];
             accessor = [self impForGetterOfProperty: key ofType: propertyType];
