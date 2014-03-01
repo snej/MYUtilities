@@ -141,7 +141,9 @@ NSString* MYErrorName( NSString *domain, NSInteger code ) {
         // If it's an OSStatus, check whether CarbonCore knows its name:
         const char *name = NULL;
 #if !TARGET_OS_IPHONE
+#if (__MAC_OS_X_VERSION_MIN_REQUIRED < 1080)
         name = GetMacOSStatusErrorString((int)code);
+#endif
 #endif
         if (name && *name)
             result = [NSString stringWithCString: name encoding: NSMacOSRomanStringEncoding];
@@ -230,12 +232,14 @@ TestCase(MYErrorUtils) {
     CAssertEqual(err.my_nameOfCode, @"POSIX 12345");
     
 #if !TARGET_OS_IPHONE
+#if (__MAC_OS_X_VERSION_MIN_REQUIRED < 1080)
     err = [NSError errorWithDomain: NSOSStatusErrorDomain code: paramErr userInfo: nil];
     CAssertEqual(err.my_nameOfCode, @"paramErr (OSStatus -50)");
     err = [NSError errorWithDomain: NSOSStatusErrorDomain code: fnfErr userInfo: nil];
     CAssertEqual(err.my_nameOfCode, @"fnfErr (OSStatus -43)");
     err = [NSError errorWithDomain: NSOSStatusErrorDomain code: -25291 userInfo: nil];
     CAssertEqual(err.my_nameOfCode, @"errKCNotAvailable / errSecNotAvailable (OSStatus -25291)");
+#endif
 #if MYERRORUTILS_USE_SECURITY_API
     err = [NSError errorWithDomain: NSOSStatusErrorDomain code: -25260 userInfo: nil];
     CAssertEqual(err.my_nameOfCode, @"Passphrase is required for import/export. (OSStatus -25260)");
