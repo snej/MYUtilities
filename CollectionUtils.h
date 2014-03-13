@@ -58,6 +58,16 @@ BOOL kvSetSet( id owner, NSString *property, NSMutableSet *set, NSSet *newSet );
 BOOL kvAddToSet( id owner, NSString *property, NSMutableSet *set, id objToAdd );
 BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToRemove );
 
+#if __has_feature(objc_arc)
+#  define MYRelease(OBJ) ((void)(OBJ))
+#  define MYAutorelease(OBJ) (OBJ)
+#  define MYRetain(OBJ) (OBJ)
+#else
+#  define MYRelease(OBJ) [(OBJ) release]
+#  define MYAutorelease(OBJ) [(OBJ) autorelease]
+#  define MYRetain(OBJ) [(OBJ) retain]
+#endif
+
 // Use this to prevent an object from being dealloced in this scope, even if you call something
 // that releases it.
 #if __has_feature(objc_arc)

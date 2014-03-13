@@ -58,4 +58,7 @@ NSString* MYErrorName( NSString *domain, NSInteger code );
 
 - (NSString*) my_nameOfCode;
 
+@property (readonly) BOOL my_isFileExistsError;
+@property (readonly) BOOL my_isFileNotFoundError;
+
 @end

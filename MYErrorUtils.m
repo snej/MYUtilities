@@ -25,7 +25,7 @@ static NSError *MYMakeErrorV( int errorCode, NSString *domain, NSString *message
     NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                                                       message, NSLocalizedDescriptionKey,
                                                       nil];
-    [message release];
+    MYRelease(message);
     return [NSError errorWithDomain: domain
                                code: errorCode
                            userInfo: userInfo];
@@ -92,8 +92,7 @@ static NSString* printableOSType( OSType t ) {
     for (int i=0; i<4; i++)
         if (buf.ch[i] < 0x20 || buf.ch[i] > 0x7E)
             return nil;
-    return [[[NSString alloc] initWithBytes: &buf.ch length: 4 encoding: NSMacOSRomanStringEncoding]
-            autorelease];
+    return MYAutorelease([[NSString alloc] initWithBytes: &buf.ch length: 4 encoding: NSMacOSRomanStringEncoding]);
 }
 
 
@@ -198,6 +197,24 @@ NSString* MYErrorName( NSString *domain, NSInteger code ) {
 - (NSString*) my_nameOfCode {
     return MYErrorName(self.domain, self.code);
 }
+
+- (BOOL) my_isFileExistsError {
+    NSString* domain = self.domain;
+    NSInteger code = self.code;
+    return ($equal(domain, NSPOSIXErrorDomain) && code == EEXIST)
+        || ($equal(domain, NSCocoaErrorDomain) && code == NSFileWriteFileExistsError);
+}
+
+- (BOOL) my_isFileNotFoundError {
+    NSString* domain = self.domain;
+    NSInteger code = self.code;
+    return ($equal(domain, NSPOSIXErrorDomain) && code == ENOENT)
+        || ($equal(domain, NSCocoaErrorDomain) && (code == NSFileNoSuchFileError
+                                                   || code == NSFileReadNoSuchFileError));
+}
+
+
+
 
 @end
 
