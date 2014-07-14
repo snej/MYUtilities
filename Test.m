@@ -247,6 +247,12 @@ void RunTestCases( int argc, const char **argv )
 }
 
 
+static BOOL RanTestNamed(NSString* testName) {
+    struct TestCaseLink* test = FindTestCaseNamed(testName.UTF8String);
+    return test && !test->testptr;
+}
+
+
 #pragma mark - TEST COVERAGE:
 
 
@@ -297,12 +303,14 @@ static BOOL CheckUncalledCoverage(void) {
 
     int failures = 0;
     for (NSString* testName in sCoverageByTest) {
-        NSDictionary* cases = sCoverageByTest[testName];
-        for (NSArray* key in cases) {
-            if ([cases[key] intValue] == 0) {
-                Warn(@"Coverage: %@:%d, Cover(%@) unreached by test case %@",
-                     key[0], [key[1] intValue], key[2], testName);
-                failures++;
+        if (RanTestNamed(testName)) {
+            NSDictionary* cases = sCoverageByTest[testName];
+            for (NSArray* key in cases) {
+                if ([cases[key] intValue] == 0) {
+                    Warn(@"Coverage: %@:%d, Cover(%@) unreached by test case %@",
+                         key[0], [key[1] intValue], key[2], testName);
+                    failures++;
+                }
             }
         }
     }
