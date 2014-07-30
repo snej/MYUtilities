@@ -42,6 +42,8 @@ typedef enum {
 
 
 int _gShouldLog = -1;
+void (^MYLoggingCallback)(NSString* domain, NSString* message) = nil;
+
 static MYLoggingTo sLoggingTo;
 static NSMutableSet *sEnabledDomains;
 
@@ -49,6 +51,9 @@ static NSMutableSet *sEnabledDomains;
 /** Does the file descriptor connect to console output, i.e. a terminal or Xcode? */
 static MYLoggingTo getLoggingMode( int fd )
 {
+#if TARGET_OS_IPHONE && !TARGET_IPHONE_SIMULATOR
+    return kLoggingToOther;
+#else
     if( isatty(fd) ) {
         const char *xcode_colors = getenv("XcodeColors");
         if (xcode_colors && (strcmp(xcode_colors, "YES") == 0))
@@ -70,6 +75,7 @@ static MYLoggingTo getLoggingMode( int fd )
             return kLoggingToOther;
 #endif
     }
+#endif
 }
 
 
@@ -98,11 +104,13 @@ static void InitLogging()
         }
     }
     sLoggingTo = getLoggingMode(STDERR_FILENO);
+
+    static const char* kModeNames[] = {"NSLog", "file", "TTY", "color TTY", "color Xcode"};
     
-    Log(@"Logging mode %i enabled in domains: {%@}", 
-        sLoggingTo,
-        [[[sEnabledDomains allObjects] sortedArrayUsingSelector: @selector(caseInsensitiveCompare:)] 
-                componentsJoinedByString: @", "]);
+    Log(@"Logging %@ to %s",
+        [[[sEnabledDomains allObjects] sortedArrayUsingSelector: @selector(caseInsensitiveCompare:)]
+                componentsJoinedByString: @", "],
+        kModeNames[sLoggingTo]);
     [pool drain];
 }
 
@@ -136,7 +144,7 @@ BOOL _EnableLogTo( NSString *domain, BOOL enable )
 }
 
 
-#define kWarningPrefix @"\007WARNING*** "
+#define kWarningPrefix @"WARNING"
 
 // See http://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 // See https://github.com/robbiehanson/XcodeColors
@@ -159,7 +167,11 @@ static NSString* color(NSString* ansi, NSString* xcode) {
 
 static void _Logv( NSString *prefix, NSString *msg, va_list args )
 {
-    if( sLoggingTo > kLoggingToOther ) {
+    if (MYLoggingCallback) {
+        msg = [[NSString alloc] initWithFormat: msg arguments: args];
+        MYLoggingCallback(prefix, msg);
+        [msg release];
+    } else if (sLoggingTo > kLoggingToOther) {
         NSAutoreleasePool *pool = [NSAutoreleasePool new];
         static NSDateFormatter *sTimestampFormat;
         if( ! sTimestampFormat ) {

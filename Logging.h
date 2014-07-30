@@ -54,6 +54,9 @@ BOOL EnableLog( BOOL enable );
 #define WillLog()  _WillLogTo(nil)
 #define WillLogTo( DOMAIN )  _WillLogTo(@""#DOMAIN)
 
+/** Setting this causes logging functions to call that block instead of outputting anything. */
+extern void (^MYLoggingCallback)(NSString* domain, NSString* message);
+
 /** Setting this to YES causes Warn() to raise an exception. Useful in unit tests. */
 extern BOOL gMYWarnRaisesException;
 
