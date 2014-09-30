@@ -19,6 +19,7 @@ static int sPassed, sFailed;
 static NSMutableArray* sFailedTestNames;
 static struct TestCaseLink *sCurrentTest;
 static int sCurTestCaseExceptions;
+static NSMutableArray* sAfterTestBlocks;
 
 #if TARGET_OS_IPHONE
 #define XML_REPORT 0 // iOS doesn't have NSXML
@@ -70,6 +71,11 @@ static void RecordFailedTest( struct TestCaseLink *test ) {
     [sFailedTestNames addObject: [NSString stringWithUTF8String: test->name]];
 }
 
+void AfterThisTest(void (^block)(void)) {
+    if (sCurrentTest)
+        [sAfterTestBlocks insertObject: [[block copy] autorelease] atIndex: 0];  // LIFO
+}
+
 static BOOL RunTestCase( struct TestCaseLink *test )
 {
     if( !test->testptr )
@@ -84,12 +90,20 @@ static BOOL RunTestCase( struct TestCaseLink *test )
     sCurrentTest = test;
 
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    NSMutableArray* savedAfterTestBlocks = sAfterTestBlocks;
+    sAfterTestBlocks = [NSMutableArray array];
     Log(@"=== Testing %s ...",test->name);
     @try{
         sCurTestCaseExceptions = 0;
         MYSetExceptionReporter(&TestCaseExceptionReporter);
 
         test->testptr();    //SHAZAM!
+
+        // Run any after-test blocks that were registered:
+        NSArray* blocks = sAfterTestBlocks;
+        sAfterTestBlocks = nil;
+        for (void (^block)() in blocks)
+            block();
 
         if (!CheckCoverage(test->name)) {
             Log(@"XXX FAILED test case '%s' due to coverage failures", test->name);
@@ -128,10 +142,15 @@ static BOOL RunTestCase( struct TestCaseLink *test )
                 }
             ReportTestCase(test, failureType, reason);
         }
+        // Run after-test blocks to clean up:
+        for (void (^block)() in sAfterTestBlocks)
+            block();
     }@finally{
         [pool drain];
         test->testptr = NULL;       // prevents test from being run again
     }
+
+    sAfterTestBlocks = savedAfterTestBlocks;
     sCurrentTest = prevTest;
     gRunningTestCase = wasRunningTestCase;
 #ifndef MY_DISABLE_LOGGING
