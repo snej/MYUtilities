@@ -67,6 +67,40 @@ void MYOnThreadSynchronously( NSThread* thread, void (^block)()) {
 }
 
 
+void MYOnThreadInModes( NSThread* thread, NSArray* modes, BOOL waitUntilDone, void (^block)()) {
+    block = [block copy];
+    [block performSelector: @selector(my_run_as_block)
+                  onThread: thread
+                withObject: block
+             waitUntilDone: waitUntilDone
+                     modes: modes];
+    [block release];
+}
+
+
+BOOL MYWaitFor( NSString* mode, BOOL (^block)() ) {
+    if (block())
+        return YES;
+
+    // Add a temporary input source for the private runloop mode, because -runMode:beforeDate: will
+    // fail if there are no sources:
+    NSPort* port = [NSPort port];
+    [[NSRunLoop currentRunLoop] addPort: port forMode: mode];
+    BOOL success = YES;
+    do {
+        if (![[NSRunLoop currentRunLoop] runMode: mode
+                                      beforeDate: [NSDate distantFuture]]) {
+            Warn(@"CBLDatabase waitFor: Runloop stopped");
+            success = NO;
+            break;
+        }
+    } while (!block());
+    [[NSRunLoop currentRunLoop] removePort: port forMode: mode];
+    return success;
+}
+
+
+
 TestCase(MYAfterDelay) {
     __block BOOL fired = NO;
     MYAfterDelayInModes(0.5, $array(NSRunLoopCommonModes), ^{fired = YES; NSLog(@"Fired!");});
