@@ -42,7 +42,9 @@
 }
  
 - (void) unlock {
-	pthread_rwlock_unlock(&_lock);
+	int err = pthread_rwlock_unlock(&_lock);
+    if (err)
+        [self _check: err];
 }
  
 - (void) lockForWriting {
