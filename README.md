@@ -4,13 +4,16 @@
 
 by Jens Alfke <jens@mooseyard.com>
 
-These are useful things I've built over the years and can't live without. This Git repo is basically a mirror of the original Mercurial repo at [Bitbucket.org](https://bitbucket.org/snej/myutilities/src).
+These are useful things I've built over the years and can't live without. 
+All of this code is released under a BSD license; see the file `LICENSE.txt`.
+
+(This Git repo is a continuation of the earlier Mercurial repo at [Bitbucket.org](https://bitbucket.org/snej/myutilities/src), which is by now quite out of date.)
 
 The core parts are:
 
 ### CollectionUtils
 
-A grab-bag of shortcuts for working with Foundation classes, mostly collections. If you've ever been envious of how simple it is to construct an array or hash in Ruby, Python or PHP, give these a try.
+A grab-bag of shortcuts for working with Foundation classes, mostly collections. Some of it has been made obsolete by the recent addition of Objective-C object literal support, but there's still a lot of useful stuff.
 
 ### Logging
 
