@@ -180,6 +180,14 @@ BOOL ifSetObjCopy( id *var, id value )
     }
 }
 
+void cfSetObj(void *var, CFTypeRef value) {
+    CFTypeRef oldValue = *(CFTypeRef*)var;
+    if( value != oldValue ) {
+        cfrelease(oldValue);
+        *(CFTypeRef*)var = cfretain(value);
+    }
+}
+
 
 NSString* $string( const char *utf8Str )
 {

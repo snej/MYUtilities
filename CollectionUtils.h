@@ -60,6 +60,11 @@ static inline void setString( NSString **var, NSString *value ) {setObjCopy(var,
 static inline BOOL ifSetString( NSString **var, NSString *value ) {return ifSetObjCopy(var,value);}
 #endif
 
+static inline CFTypeRef cfretain(CFTypeRef obj) {if (obj) CFRetain(obj); return obj;}
+static inline void cfrelease(CFTypeRef obj) {if (obj) CFRelease(obj);}
+
+void cfSetObj(void *var, CFTypeRef value);
+
 BOOL kvSetObj( id owner, NSString *property, id *varPtr, id value );
 BOOL kvSetObjCopy( id owner, NSString *property, id *varPtr, id value );
 BOOL kvSetSet( id owner, NSString *property, NSMutableSet *set, NSSet *newSet );
