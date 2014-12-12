@@ -10,6 +10,7 @@
 #import "Logging.h"
 #import "Test.h"
 #import <CommonCrypto/CommonDigest.h>
+#import <Security/Security.h>
 
 
 // Raw data of an anonymous X.509 cert:
