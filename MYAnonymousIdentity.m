@@ -102,14 +102,20 @@ static BOOL generateRSAKeyPair(int sizeInBits,
                                SecKeyRef *privateKey,
                                NSError** outError)
 {
+#if TARGET_OS_IPHONE
     NSDictionary *keyAttrs = @{(__bridge id)kSecAttrIsPermanent: @(permanent),
                                (__bridge id)kSecAttrLabel: label};
+#endif
     NSDictionary *pairAttrs = @{(__bridge id)kSecAttrKeyType:       (__bridge id)kSecAttrKeyTypeRSA,
                                 (__bridge id)kSecAttrKeySizeInBits: @(sizeInBits),
-                                (__bridge id)kSecAttrIsPermanent:   @(permanent), // for Mac
                                 (__bridge id)kSecAttrLabel:         label,
-                                (__bridge id)kSecPublicKeyAttrs:    keyAttrs,     // for iOS
-                                (__bridge id)kSecPrivateKeyAttrs:   keyAttrs};
+#if TARGET_OS_IPHONE
+                                (__bridge id)kSecPublicKeyAttrs:    keyAttrs,
+                                (__bridge id)kSecPrivateKeyAttrs:   keyAttrs
+#else
+                                (__bridge id)kSecAttrIsPermanent:   @(permanent)
+#endif
+                                };
     if (!checkErr(SecKeyGeneratePair((__bridge CFDictionaryRef)pairAttrs, publicKey, privateKey),
                   outError))
         return NO;
