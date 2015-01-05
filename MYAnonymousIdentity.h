@@ -28,10 +28,10 @@ SecIdentityRef MYGetOrCreateAnonymousIdentity(NSString* label,
     @return  YES if an identity was removed, NO if not. */
 BOOL MYDeleteAnonymousIdentity(NSString* label);
 
-/** Convenience function to get the SHA-1 digest of the public key of a certificate.
+/** Convenience function to get the SHA-1 digest of a certificate.
     This is a handy way to uniquely identify the certificate. For example, as the owner of an
     identity you can send this digest to someone else over an existing secure channel, and they can
     then make an SSL connection to you and verify your identity by comparing cert digests. */
-NSData* MYGetCertificatePublicKeyDigest(SecCertificateRef cert);
+NSData* MYGetCertificateDigest(SecCertificateRef cert);
 
 #define kMYAnonymousIdentityDefaultExpirationInterval (60*60*24*365.0)

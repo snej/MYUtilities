@@ -292,6 +292,15 @@ static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInt
 }
 
 
+NSData* MYGetCertificateDigest(SecCertificateRef cert) {
+    CFDataRef data = SecCertificateCopyData(cert);
+    uint8_t digest[CC_SHA1_DIGEST_LENGTH];
+    CC_SHA1(CFDataGetBytePtr(data), (CC_LONG)CFDataGetLength(data), digest);
+    CFRelease(data);
+    return [NSData dataWithBytes: digest length: sizeof(digest)];
+}
+
+
 #if TARGET_OS_IPHONE
 static NSDictionary* getItemAttributes(CFTypeRef cert) {
     NSDictionary* query = @{(__bridge id)kSecValueRef: (__bridge id)cert,
@@ -308,8 +317,11 @@ static NSDictionary* getItemAttributes(CFTypeRef cert) {
 #endif
 
 
+#if 0 // Disabling this because I can't find a good way to get a cert's key digest on iOS.
 NSData* MYGetCertificatePublicKeyDigest(SecCertificateRef cert) {
 #if TARGET_OS_IPHONE
+    //FIX: Unfortunately this doesn't work: the SecItem___ API only operates on items that are
+    // in the Keychain already, so it fails with errSecItemNotFound on this cert.
     return getItemAttributes(cert)[(__bridge id)kSecAttrPublicKeyHash];
 #else
     SecKeyRef publicKey;
@@ -322,6 +334,7 @@ NSData* MYGetCertificatePublicKeyDigest(SecCertificateRef cert) {
     return [NSData dataWithBytes: digest length: sizeof(digest)];
 #endif
 }
+#endif // 0
 
 
 #if !TARGET_OS_IPHONE
@@ -399,9 +412,9 @@ TestCase(GenerateAnonymousCert) {
     Assert(ident, @"Couldn't find identity");
 #endif
 
-    NSData* keyDigest = MYGetCertificatePublicKeyDigest(certRef);
-    Log(@"Key digest = %@", keyDigest);
-    Assert(keyDigest);
+    NSData* digest = MYGetCertificateDigest(certRef);
+    Log(@"Cert digest = %@", digest);
+    Assert(digest);
 }
 
 
