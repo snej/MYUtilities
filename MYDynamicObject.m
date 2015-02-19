@@ -205,7 +205,7 @@ static void setFloatProperty(MYDynamicObject *self, SEL _cmd, float value) {
 static const char* MYGetPropertyType(objc_property_t property, BOOL *outIsSettable) {
     *outIsSettable = YES;
     const char *result = "@";
-    
+
     // Copy property attributes into a writeable buffer:
     const char *attributes = property_getAttributes(property);
     char buffer[1 + strlen(attributes)];
@@ -270,7 +270,24 @@ Class MYClassFromType(const char* propertyType) {
         return NULL;
     char className[len - 2];
     strlcpy(className, propertyType + 2, len - 2);
+    char* bracket = strchr(className, '<');
+    if (bracket) {
+        if (bracket == className)
+            return Nil;     // It's a pure protocol name
+        *bracket = '\0';    // Strip any trailing protocol name(s)
+    }
     return objc_getClass(className);
+}
+
+
+Protocol* MYProtocolFromType(const char* propertyType) {
+    size_t len = strlen(propertyType);
+    if (propertyType[0] != _C_ID || propertyType[1] != '"' || propertyType[len-1] != '"'
+                                 || propertyType[2] != '<' || propertyType[len-2] != '>')
+        return NULL;
+    char protocolName[len - 4];
+    strlcpy(protocolName, propertyType + 3, len - 4);
+    return objc_getProtocol(protocolName);
 }
 
 
@@ -304,10 +321,40 @@ Class MYClassFromType(const char* propertyType) {
 }
 
 
++ (IMP) impForGetterOfProperty: (NSString*)property ofProtocol: (Protocol*)propertyProtocol {
+#if USE_BLOCKS
+    return imp_implementationWithBlock(^id(MYDynamicObject* receiver) {
+        return [receiver getValueOfProperty: property];
+    });
+#else
+    return (IMP)getIdProperty;
+#endif
+}
+
++ (IMP) impForSetterOfProperty: (NSString*)property ofProtocol: (Protocol*)propertyProtocol {
+#if USE_BLOCKS
+    return imp_implementationWithBlock(^(MYDynamicObject* receiver, id value) {
+        setIdProperty(receiver, property, value);
+    });
+#else
+    return (IMP)setIdProperty;
+#endif
+}
+
+
 + (IMP) impForGetterOfProperty: (NSString*)property ofType: (const char*)propertyType {
     switch (propertyType[0]) {
-        case _C_ID:
-            return [self impForGetterOfProperty: property ofClass: MYClassFromType(propertyType)];
+        case _C_ID: {
+            Class klass = MYClassFromType(propertyType);
+            if (klass)
+                return [self impForGetterOfProperty: property ofClass: klass];
+            Protocol* proto = MYProtocolFromType(propertyType);
+            if (proto)
+                return [self impForGetterOfProperty: property ofProtocol: proto];
+            Warn(@"MYDynamicObject: %@.%@ has type %s which is not a known class or protocol",
+                 self, property, propertyType);
+            return NULL;
+        }
         case _C_INT:
         case _C_SHT:
         case _C_USHT:
@@ -391,8 +438,17 @@ Class MYClassFromType(const char* propertyType) {
 
 + (IMP) impForSetterOfProperty: (NSString*)property ofType: (const char*)propertyType {
     switch (propertyType[0]) {
-        case _C_ID:
-            return [self impForSetterOfProperty: property ofClass: MYClassFromType(propertyType)];
+        case _C_ID: {
+            Class klass = MYClassFromType(propertyType);
+            if (klass)
+                return [self impForSetterOfProperty: property ofClass: klass];
+            Protocol* proto = MYProtocolFromType(propertyType);
+            if (proto)
+                return [self impForSetterOfProperty: property ofProtocol: proto];
+            Warn(@"MYDynamicObject: %@.%@ has type %s which is not a known class or protocol",
+                 self, property, propertyType);
+            return NULL;
+        }
         case _C_INT:
         case _C_SHT:
         case _C_USHT:
