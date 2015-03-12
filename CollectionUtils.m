@@ -530,7 +530,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 #endif // NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
 
 
-
+#if DEBUG
 #import "Test.h"
 
 TestCase(CollectionUtils) {
@@ -569,7 +569,7 @@ TestCase(CollectionUtils) {
     CAssertEqual(mapped.allObjects, $array(@"TEENAGE", @"TURTLES"));
 #endif
 }
-
+#endif
 
 /*
  Copyright (c) 2008-2013, Jens Alfke <jens@mooseyard.com>. All rights reserved.

@@ -65,6 +65,8 @@ void AfterThisTest(void (^block)());
 
 /** General-purpose assertions, replacing NSAssert etc.. You can use these outside test cases. */
 
+#ifndef MY_BLOCK_ASSERTS
+
 #define Assert(COND,MSG...)    do{ if( __builtin_expect(!(COND),NO) ) { \
                                     _AssertFailed(__func__, __FILE__, __LINE__,\
                                                         #COND,##MSG,NULL); } }while(0)
@@ -81,6 +83,15 @@ void AfterThisTest(void (^block)());
 
 #define AssertNil(VAL)          AssertEq((VAL),(id)nil)
 #define AssertNull(VAL)         AssertEq((VAL),NULL)
+
+#else // MY_BLOCK_ASSERTS
+#define Assert(COND,MSG...)         do{ }while(0)
+#define AssertEqual(VAL,EXPECTED)   do{ }while(0)
+#define AssertEq(VAL,EXPECTED)      do{ }while(0)
+#define AssertAlmostEq(N1,N2, TOL)  do{ }while(0)
+#define AssertNil(VAL)              do{ }while(0)
+#define AssertNull(VAL)             do{ }while(0)
+#endif
 
 #define AssertAbstractMethod()  _AssertAbstractMethodFailed(self,_cmd);
 
