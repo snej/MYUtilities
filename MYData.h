@@ -27,8 +27,10 @@ typedef struct {
     size_t length;
 } MYSlice;
 
-static inline MYSlice MYMakeSlice(void* bytes, size_t length)
+static inline MYSlice MYMakeSlice(const void* bytes, size_t length)
     {return (MYSlice){bytes, length};}
+static inline MYSlice MYNullSlice()
+    {return (MYSlice){NULL, 0};}
 MYSlice MYMakeSubSlice(MYSlice slice, size_t offset, size_t length);
 static inline BOOL MYSliceIsEmpty(MYSlice slice)
     {return slice.length == 0;}
