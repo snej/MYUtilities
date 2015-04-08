@@ -266,8 +266,14 @@ BOOL MYGetPropertyInfo(Class cls,
 
 Class MYClassFromType(const char* propertyType) {
     size_t len = strlen(propertyType);
-    if (propertyType[0] != _C_ID || propertyType[1] != '"' || propertyType[len-1] != '"')
+    if (propertyType[0] != _C_ID)
         return NULL;
+    if (len == 1)
+        return [NSObject class];    // Not quite right, but there's no class representing "id"
+    if (len < 4 || propertyType[1] != '"' || propertyType[len-1] != '"') {
+        Warn(@"MYDynamicObject: Unknown type encoding: %s", propertyType);
+        return NULL;
+    }
     char className[len - 2];
     strlcpy(className, propertyType + 2, len - 2);
     char* bracket = strchr(className, '<');
