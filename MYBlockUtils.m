@@ -8,6 +8,7 @@
 
 #import "MYBlockUtils.h"
 #import "Test.h"
+#import <libkern/OSAtomic.h>
 
 
 @interface NSObject (MYBlockUtils)
@@ -100,6 +101,37 @@ BOOL MYWaitFor( NSString* mode, BOOL (^block)() ) {
 }
 
 
+dispatch_block_t MYThrottledBlock(NSTimeInterval minInterval, dispatch_block_t block) {
+    __block CFAbsoluteTime lastTime = 0;
+    block = [block copy];
+    dispatch_block_t throttled = ^{
+        CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+        if (now - lastTime >= minInterval)
+            block();
+        lastTime = now;
+    };
+    return [throttled copy];
+}
+
+
+dispatch_block_t MYBatchedBlock(NSTimeInterval minInterval,
+                                dispatch_queue_t queue,
+                                void (^block)())
+{
+    __block uint8_t scheduled = 0;
+    block = [block copy];
+    dispatch_block_t batched = ^{
+        uint8_t wasScheduled = OSAtomicTestAndSetBarrier(0, &scheduled);
+        if (!wasScheduled) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(minInterval * NSEC_PER_SEC)),
+                           queue, ^{
+                OSAtomicTestAndClearBarrier(0, &scheduled);
+                block();
+            });
+        }
+    };
+    return [batched copy];
+}
 
 TestCase(MYAfterDelay) {
     __block BOOL fired = NO;

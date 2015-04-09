@@ -30,3 +30,15 @@ void MYOnThreadInModes(NSThread* thread,
 
 /** Spins the runloop in the given mode until the block returns YES. */
 BOOL MYWaitFor( NSString* mode, BOOL (^block)() );
+
+/** Returns a block that when called invokes `block` unless the time since the last call to
+    `block` was less than `minInterval` seconds ago. */
+dispatch_block_t MYThrottledBlock(NSTimeInterval minInterval, void (^block)());
+
+/** Returns a block that when called invokes `block` on `queue`, but not more often than
+    `minInterval`.
+    There will be a delay of up to `minInterval` seconds before the call to `block`,
+    but every call to the returned block will result in a future call of `block`. */
+dispatch_block_t MYBatchedBlock(NSTimeInterval minInterval,
+                                dispatch_queue_t queue,
+                                void (^block)());
