@@ -38,7 +38,7 @@ static inline const void* MYSliceGetEnd(MYSlice slice)
     {return slice.bytes + slice.length;}
 static inline void MYSliceMoveStart(MYSlice *slice, size_t n)
     {slice->bytes += n; slice->length -= n;}
-static inline void MYSliceMoveStartTo(MYSlice *slice, void* start)
+static inline void MYSliceMoveStartTo(MYSlice *slice, const void* start)
     {slice->length -= start - slice->bytes; slice->bytes = start;}
 
 BOOL MYSliceReadVarUInt(MYSlice* slice, UInt64* outResult);

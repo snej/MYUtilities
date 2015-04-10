@@ -42,8 +42,8 @@ const void* MYDecodeVarUInt(const void* buf, const void* bufEnd, UInt64* outNumb
 
 
 size_t MYLengthOfVarUInt(UInt64 number) {
-    size_t length = 0;
-    while (number) {
+    size_t length = 1;
+    while (number >= 0x80) {
         length++;
         number >>= 7;
     }
