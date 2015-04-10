@@ -11,13 +11,18 @@
 #import "Logging.h"
 
 
+#ifndef MY_ENABLE_TESTS
+#define MY_ENABLE_TESTS 0
+#endif
+
+
 /** Call this first thing in main() to run tests.
     This function is a no-op if the DEBUG macro is not defined (i.e. in a release build).
     At runtime, to cause a particular test "X" to run, add a command-line argument "Test_X".
     To run all tests, add the argument "Test_All".
     To run only tests without starting the main program, add the argument "Test_Only".
     To generate a JUnit-compatible XML report file "test_report.xml", add "Test_Report. */
-#if DEBUG
+#if MY_ENABLE_TESTS
 void RunTestCases( int argc, const char **argv );
 extern BOOL gRunningTestCase;
 #else
@@ -36,8 +41,8 @@ extern BOOL gRunningTestCase;
             RequireTestCase("LibIDependOn");
             CAssertEq( myFunction(), 12345 );
         }
-    Test cases are disabled if the DEBUG macro is not defined (i.e. in a release build). */
-#if DEBUG
+    Test cases are disabled if the MY_ENABLE_TESTS macro is not defined (i.e. in a release build). */
+#if MY_ENABLE_TESTS
 #define TestCase(NAME)      void Test_##NAME(void); \
                             struct TestCaseLink linkToTest##NAME = {&Test_##NAME,#NAME}; \
                             __attribute__((constructor)) static void registerTestCase##NAME() \
@@ -49,7 +54,7 @@ extern BOOL gRunningTestCase;
 
 /** Can call this in a test case to indicate a prerequisite.
     The prerequisite test will be run first, and if it fails, the current test case will be skipped. */
-#if DEBUG
+#if MY_ENABLE_TESTS
 #define RequireTestCase(NAME)   _RequireTestCase(#NAME)
 void _RequireTestCase( const char *name );
 #else
@@ -130,7 +135,7 @@ NSString* WhyUnequalObjects(id a, id b);
         #define ifc(COND) if(Cover(COND))
 */
 
-#if DEBUG
+#if MY_ENABLE_TESTS
 #define TestedBy(TEST_NAME) static const char* __unused kTestedBy = #TEST_NAME; \
             extern void Test_##TEST_NAME(void); __unused void* x = &Test_##TEST_NAME
 #define Cover(CONDITION) ({ \
@@ -145,12 +150,12 @@ NSString* WhyUnequalObjects(id a, id b);
 
 
 // Nasty internals ...
-#if DEBUG
+#if MY_ENABLE_TESTS
 void _RunTestCase( void (*testptr)(), const char *name );
 
 struct TestCaseLink {void (*testptr)(); const char *name; BOOL passed; struct TestCaseLink *next;};
 extern struct TestCaseLink *gAllTestCases;
-#endif // DEBUG
+#endif // MY_ENABLE_TESTS
 void _AssertEqual(id val, id expected, const char* valExpr,
                   const char* selOrFn, const char* sourceFile, int sourceLine);
 void _AssertFailed(const void *selOrFn, const char *sourceFile, int sourceLine,

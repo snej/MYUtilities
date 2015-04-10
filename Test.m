@@ -8,7 +8,7 @@
 
 #import "Test.h"
 
-#if DEBUG
+#if MY_ENABLE_TESTS
 
 #import "ExceptionUtils.h"
 
@@ -351,7 +351,7 @@ static BOOL CheckUncalledCoverage(void) {
 }
 
 
-#endif // DEBUG
+#endif // MY_ENABLE_TESTS
 
 
 /*
