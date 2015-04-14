@@ -7,6 +7,7 @@
 //
 
 #import "MYBuffer.h"
+#import "Logging.h"
 
 #define kChunkCapacity 4096
 
@@ -130,6 +131,7 @@
             NSInputStream* stream = chunk;
             nRead = [stream read: buffer maxLength: maxLength];
             if (nRead < 0) {
+                Warn(@"%@: Error reading from %@: %@", self, stream, stream.streamError);
                 return nRead; // read error!
             }
             if (nRead == 0 || stream.streamStatus == NSStreamStatusAtEnd) {
