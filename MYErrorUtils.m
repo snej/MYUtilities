@@ -198,6 +198,10 @@ NSString* MYErrorName( NSString *domain, NSInteger code ) {
     return MYErrorName(self.domain, self.code);
 }
 
+- (BOOL) my_hasDomain: (NSString*)domain code: (NSInteger)code {
+    return self.code == code && [self.domain isEqualToString: domain];
+}
+
 - (BOOL) my_isFileExistsError {
     NSString* domain = self.domain;
     NSInteger code = self.code;
