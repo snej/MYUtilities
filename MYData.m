@@ -127,7 +127,7 @@ TestCase(VarInt) {
         {0x123456787654321, 9, {0xA1, 0x86, 0x95, 0xBB, 0xF8, 0xAC, 0xD1, 0x91, 0x01}},
     };
     UInt8 buf[12];
-    for (int i=0; i<sizeof(tests)/sizeof(*tests); i++) {
+    for (size_t i=0; i<sizeof(tests)/sizeof(*tests); i++) {
         UInt8* dst = MYEncodeVarUInt(buf, tests[i].number);
         Log(@"VarInt encoded 0x%llx --> %@", tests[i].number, [NSData dataWithBytes: buf length: dst-buf]);
         CAssertEq(dst-buf, tests[i].len);
