@@ -8,6 +8,8 @@
 
 #import "MYBuffer.h"
 #import "Logging.h"
+#import "Test.h"
+
 
 #define kChunkCapacity 4096
 
@@ -77,9 +79,9 @@
 #pragma mark - WRITING:
 
 
-- (void) writeSlice: (MYSlice)slice {
+- (BOOL) writeSlice: (MYSlice)slice {
     if (slice.length == 0)
-        return;
+        return YES;
     if (_writingChunk && _writingChunk.length + slice.length > kChunkCapacity)
         _writingChunk = nil;
     if (!_writingChunk) {
@@ -87,23 +89,26 @@
         [_chunks addObject: _writingChunk];
     }
     [_writingChunk appendBytes: slice.bytes length: slice.length];
+    return YES;
 }
 
-- (void) writeData: (NSData*)data {
+- (BOOL) writeData: (NSData*)data {
     NSUInteger length = data.length;
     if (length == 0) {
-        return;
+        return YES;
     } else if (_writingChunk.length + length <= kChunkCapacity) {
         [self writeSlice: MYMakeSlice(data.bytes, length)];
     } else {
         _writingChunk = nil;
         [_chunks addObject: [data copy]];
     }
+    return YES;
 }
 
-- (void) writeContentsOfStream: (NSInputStream*)inputStream {
+- (BOOL) writeContentsOfStream: (NSInputStream*)inputStream {
     _writingChunk = nil;
     [_chunks addObject: inputStream];
+    return YES;
 }
 
 
@@ -216,7 +221,6 @@
     }
     return YES;
 }
-
 
 
 @end

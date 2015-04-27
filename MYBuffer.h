@@ -12,15 +12,15 @@
 
 @protocol MYWriter <NSObject>
 
-- (void) writeData: (NSData*)data;
-- (void) writeSlice: (MYSlice)slice;
+- (BOOL) writeData: (NSData*)data;
+- (BOOL) writeSlice: (MYSlice)slice;
 
 /** Adds the contents of the stream. The stream must already be open. This may not read from the
     stream right way; instead the writer may keep a reference to the stream and only read from
     it on demand to satisfy its own read requests. For this reason you shouldn't read from or close
     the stream after this call! The MYWriter instance will close the stream when it's been entirely
     read, or when the writer itself is dealloced. */
-- (void) writeContentsOfStream: (NSInputStream*)inputStream;
+- (BOOL) writeContentsOfStream: (NSInputStream*)inputStream;
 
 @end
 
@@ -53,7 +53,7 @@
 @property (readonly) NSUInteger maxLength;
 
 /** Returns the entire (remaining) contents of the buffer as a single NSData.
-    This doesn't read anything from the buffer, it just reorganizes its contents if needed. */
+    This doesn't consume any bytes, it just reorganizes the buffer's contents if needed. */
 - (NSData*) flattened;
 
 //- (ssize_t) unReadBytes: (void*)buffer maxLength: (size_t)maxLength;
