@@ -62,11 +62,12 @@ void _RequireTestCase( const char *name );
 #endif
 
 
+#if MY_ENABLE_TESTS
 /** Schedules a block to run after the currently-running test case completes.
     This is useful for cleanup of resources created during a test.
     If this function is called multiple times, the blocks will be invoked in reverse order. */
 void AfterThisTest(void (^block)());
-
+#endif
 
 /** General-purpose assertions, replacing NSAssert etc.. You can use these outside test cases. */
 
