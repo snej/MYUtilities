@@ -3,7 +3,7 @@
 //  MYUtilities
 //
 //  Created by Jens Alfke on 7/25/12.
-//
+//  Copyright (c) 2012 Jens Alfke. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

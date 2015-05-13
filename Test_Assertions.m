@@ -1,6 +1,6 @@
 //
 //  Test_Assertions.m
-//  CouchbaseLite
+//  MYUtilities
 //
 //  Created by Jens Alfke on 8/11/14.
 //

@@ -1,9 +1,9 @@
 //
 //  MYBuffer.h
-//  BLIPSync
+//  MYUtilities
 //
 //  Created by Jens Alfke on 4/5/15.
-//  Copyright (c) 2015 Couchbase. All rights reserved.
+//  Copyright (c) 2015 Jens Alfke. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
