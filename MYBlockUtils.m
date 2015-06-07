@@ -27,14 +27,14 @@
 
 
 void MYAfterDelay( NSTimeInterval delay, void (^block)() ) {
-    block = [[block copy] autorelease];
+    block = [block copy];
     [block performSelector: @selector(my_run_as_block)
                 withObject: nil
                 afterDelay: delay];
 }
 
 id MYAfterDelayInModes( NSTimeInterval delay, NSArray* modes, void (^block)() ) {
-    block = [[block copy] autorelease];
+    block = [block copy];
     [block performSelector: @selector(my_run_as_block)
                 withObject: nil
                 afterDelay: delay
@@ -55,7 +55,6 @@ static void MYOnThreadWaiting( NSThread* thread, BOOL waitUntilDone, void (^bloc
                   onThread: thread
                 withObject: block
              waitUntilDone: waitUntilDone];
-    [block release];
 }
 
 
@@ -75,7 +74,6 @@ void MYOnThreadInModes( NSThread* thread, NSArray* modes, BOOL waitUntilDone, vo
                 withObject: block
              waitUntilDone: waitUntilDone
                      modes: modes];
-    [block release];
 }
 
 

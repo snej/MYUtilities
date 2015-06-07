@@ -84,34 +84,34 @@ static void InitLogging()
     if( _gShouldLog != -1 )
         return;
 
-    NSAutoreleasePool *pool = [NSAutoreleasePool new];
-    _gShouldLog = NO;
-    sEnabledDomains = [[NSMutableSet alloc] init];
-    NSDictionary *dflts = [[NSUserDefaults standardUserDefaults] dictionaryRepresentation];
-    for( NSString *key in dflts ) {
-        if( [key hasPrefix: @"Log"] ) {
-            BOOL value = [[NSUserDefaults standardUserDefaults] boolForKey: key];
-            if( key.length==3 )
-                _gShouldLog = value;
-            else if( value ) {
-                key = [key substringFromIndex: 3]; // trim 'Log'
-                [sEnabledDomains addObject: key];
-                if (key.length > 7 && [key hasSuffix: @"Verbose"]) {
-                    key = [key substringToIndex: key.length - 7]; // trim 'Verbose'
-                    [sEnabledDomains addObject: key];
+    @autoreleasepool {
+        _gShouldLog = NO;
+        sEnabledDomains = [[NSMutableSet alloc] init];
+        NSDictionary *dflts = [[NSUserDefaults standardUserDefaults] dictionaryRepresentation];
+        for( NSString *key in dflts ) {
+            if( [key hasPrefix: @"Log"] ) {
+                BOOL value = [[NSUserDefaults standardUserDefaults] boolForKey: key];
+                if( key.length==3 )
+                    _gShouldLog = value;
+                else if( value ) {
+                    NSString* trimmedKey = [key substringFromIndex: 3]; // trim 'Log'
+                    [sEnabledDomains addObject: trimmedKey];
+                    if (trimmedKey.length > 7 && [trimmedKey hasSuffix: @"Verbose"]) {
+                        trimmedKey = [trimmedKey substringToIndex: key.length - 7]; // trim 'Verbose'
+                        [sEnabledDomains addObject: trimmedKey];
+                    }
                 }
             }
         }
-    }
-    sLoggingTo = getLoggingMode(STDERR_FILENO);
+        sLoggingTo = getLoggingMode(STDERR_FILENO);
 
-    static const char* kModeNames[] = {"NSLog", "file", "TTY", "color TTY", "color Xcode"};
-    
-    Log(@"Logging %@ to %s",
-        [[[sEnabledDomains allObjects] sortedArrayUsingSelector: @selector(caseInsensitiveCompare:)]
-                componentsJoinedByString: @", "],
-        kModeNames[sLoggingTo]);
-    [pool drain];
+        static const char* kModeNames[] = {"NSLog", "file", "TTY", "color TTY", "color Xcode"};
+        
+        Log(@"Logging %@ to %s",
+            [[[sEnabledDomains allObjects] sortedArrayUsingSelector: @selector(caseInsensitiveCompare:)]
+                    componentsJoinedByString: @", "],
+            kModeNames[sLoggingTo]);
+    }
 }
 
 
@@ -170,35 +170,31 @@ static void _Logv( NSString *prefix, NSString *msg, va_list args )
     if (MYLoggingCallback) {
         msg = [[NSString alloc] initWithFormat: msg arguments: args];
         MYLoggingCallback(prefix, msg);
-        [msg release];
     } else if (sLoggingTo > kLoggingToOther) {
-        NSAutoreleasePool *pool = [NSAutoreleasePool new];
-        static NSDateFormatter *sTimestampFormat;
-        if( ! sTimestampFormat ) {
-            sTimestampFormat = [[NSDateFormatter alloc] init];
-            sTimestampFormat.dateFormat = @"HH:mm:ss.SSS";
+        @autoreleasepool {
+            static NSDateFormatter *sTimestampFormat;
+            if( ! sTimestampFormat ) {
+                sTimestampFormat = [[NSDateFormatter alloc] init];
+                sTimestampFormat.dateFormat = @"HH:mm:ss.SSS";
+            }
+            NSDate *now = [[NSDate alloc] init];
+            NSString *timestamp = [sTimestampFormat stringFromDate: now];
+
+            NSString* timestampTrailer = @"|";
+            if (![[NSThread currentThread] isMainThread])
+                timestampTrailer = @"‖";
+
+            NSString *separator = prefix.length ?@": " :@"";
+            msg = [[NSString alloc] initWithFormat: msg arguments: args];
+            BOOL isWarning = [prefix isEqualToString: kWarningPrefix];
+            NSString *prefixColor = isWarning ?COLOR_WARNING :COLOR_PREFIX;
+            NSString *msgColor = isWarning ?@"" :COLOR_RESET;
+            NSString *finalMsg = [[NSString alloc] initWithFormat: @"%@%@%@ %@%@%@%@%@\n", 
+                                  COLOR_TIME,timestamp, timestampTrailer,
+                                  prefixColor,prefix,separator,
+                                  msgColor,msg];
+            fputs([finalMsg UTF8String], stderr);
         }
-        NSDate *now = [[NSDate alloc] init];
-        NSString *timestamp = [sTimestampFormat stringFromDate: now];
-        [now release];
-
-        NSString* timestampTrailer = @"|";
-        if (![[NSThread currentThread] isMainThread])
-            timestampTrailer = @"‖";
-
-        NSString *separator = prefix.length ?@": " :@"";
-        msg = [[NSString alloc] initWithFormat: msg arguments: args];
-        BOOL isWarning = [prefix isEqualToString: kWarningPrefix];
-        NSString *prefixColor = isWarning ?COLOR_WARNING :COLOR_PREFIX;
-        NSString *msgColor = isWarning ?@"" :COLOR_RESET;
-        NSString *finalMsg = [[NSString alloc] initWithFormat: @"%@%@%@ %@%@%@%@%@\n", 
-                              COLOR_TIME,timestamp, timestampTrailer,
-                              prefixColor,prefix,separator,
-                              msgColor,msg];
-        fputs([finalMsg UTF8String], stderr);
-        [finalMsg release];
-        [msg release];
-        [pool drain];
     } else {
         if( prefix.length )
             msg = $sprintf(@"%@: %@", prefix,msg);

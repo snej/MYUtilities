@@ -6,6 +6,8 @@
 //  Copyright 2008-2013 Jens Alfke. All rights reserved.
 //
 
+//  NOTE: Old/deprecated stuff has been moved to CollectionUtils+Old
+
 #import <Foundation/Foundation.h>
 #define _MYUTILITIES_COLLECTIONUTILS_ 1
 
@@ -24,17 +26,9 @@
 #define $object(VAL)        ({__typeof(VAL) v=(VAL); _box(&v,@encode(__typeof(v)));})
 
 
-// Apply a selector to each array element, returning an array of the results:
-// (See also -[NSArray my_map:], which is more general but requires block support)
-NSArray* $apply( NSArray *src, SEL selector, id defaultValue );
-NSArray* $applyKeyPath( NSArray *src, NSString *keyPath, id defaultValue );
-
-
 // Object conveniences:
 
 BOOL $equal(id obj1, id obj2);      // Like -isEqual: but works even if either/both are nil
-
-NSString* $string( const char *utf8Str );
 
 #define $sprintf(FORMAT, ARGS... )  [NSString stringWithFormat: (FORMAT), ARGS]
 
@@ -44,32 +38,11 @@ NSString* $string( const char *utf8Str );
 #define $castArrayOf(ITEMCLASSNAME,OBJ) _castArrayOf([ITEMCLASSNAME class],(OBJ))
 #define $castIfArrayOf(ITEMCLASSNAME,OBJ) _castIfArrayOf([ITEMCLASSNAME class],(OBJ))
 
-#if __has_feature(objc_arc)
-#define setObj(VAR,VALUE) *(VAR) = (VALUE)
-#define setObjCopy(VAR,VALUE) *(VAR) = [(VALUE) copy]
-#define setString(VAR,VALUE) *(VAR) = [(VALUE) copy]
-#define ifSetObj(VAR,VALUE) (((VALUE) != *(VAR) && ![(VALUE) isEqual: *(VAR)]) ? (*(VAR) = (VALUE), YES) : NO)
-
-#else
-void setObj( id *var, id value );
-BOOL ifSetObj( id *var, id value );
-void setObjCopy( id *var, id valueToCopy );
-BOOL ifSetObjCopy( id *var, id value );
-
-static inline void setString( NSString **var, NSString *value ) {setObjCopy(var,value);}
-static inline BOOL ifSetString( NSString **var, NSString *value ) {return ifSetObjCopy(var,value);}
-#endif
 
 static inline CFTypeRef cfretain(CFTypeRef obj) {if (obj) CFRetain(obj); return obj;}
 static inline void cfrelease(CFTypeRef obj) {if (obj) CFRelease(obj);}
 
 void cfSetObj(void *var, CFTypeRef value);
-
-BOOL kvSetObj( id owner, NSString *property, id *varPtr, id value );
-BOOL kvSetObjCopy( id owner, NSString *property, id *varPtr, id value );
-BOOL kvSetSet( id owner, NSString *property, NSMutableSet *set, NSSet *newSet );
-BOOL kvAddToSet( id owner, NSString *property, NSMutableSet *set, id objToAdd );
-BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToRemove );
 
 #if __has_feature(objc_arc)
 #  define MYRelease(OBJ) ((void)(OBJ))
@@ -100,8 +73,6 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 
 @interface NSArray (MYUtils)
 - (BOOL) my_containsObjectIdenticalTo: (id)object;
-- (NSArray*) my_arrayByApplyingSelector: (SEL)selector;
-- (NSArray*) my_arrayByApplyingSelector: (SEL)selector withObject: (id)object;
 #if NS_BLOCKS_AVAILABLE
 - (NSArray*) my_map: (id (^)(id obj))block;
 - (NSArray*) my_filter: (int (^)(id obj))block;
@@ -139,51 +110,9 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @end
 
 
-// Compatibility declarations to allow NSArray/NSDictionary subscripting in iOS with Xcode 4.4.
-// The compiler needs to see declarations of these methods to make the class subscriptable, but
-// the iOS 5.1 SDK doesn't contain them on NSArray/NSDictionary. It appears it isn't necessary
-// to actually implement these methods, though...
-#if (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED < 60000)
-@interface NSArray (PreiOS6)
-- (id)objectAtIndexedSubscript:(NSUInteger)index;
-@end
-@interface NSMutableArray (PreiOS6)
-- (void)setObject: (id)object atIndexedSubscript:(NSUInteger)index;
-@end
-@interface NSDictionary (PreiOS6)
-- (id)objectForKeyedSubscript:(id)key;
-@end
-@interface NSMutableDictionary (PreiOS6)
-- (void)setObject: (id)object forKeyedSubscript:(id)key;
-@end
-#endif
-
-
 #ifdef GNUSTEP
 #define kCFBooleanTrue  ([NSNumber numberWithBool: YES])
 #define kCFBooleanFalse ([NSNumber numberWithBool: NO])
-#endif
-
-
-
-#pragma mark -
-#pragma mark FOREACH:
-    
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-#define foreach(VAR,ARR) for(VAR in ARR)
-
-#else
-struct foreachstate {NSArray *array; unsigned n, i;};
-static inline struct foreachstate _initforeach( NSArray *arr ) {
-    struct foreachstate s;
-    s.array = arr;
-    s.n = [arr count];
-    s.i = 0;
-    return s;
-}
-#define foreach(VAR,ARR) for( struct foreachstate _s = _initforeach((ARR)); \
-                                   _s.i<_s.n && ((VAR)=[_s.array objectAtIndex: _s.i], YES); \
-                                   _s.i++ )
 #endif
 
 

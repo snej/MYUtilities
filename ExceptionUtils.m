@@ -37,7 +37,6 @@ void MYReportException( NSException *x, NSString *where, ... )
     Warn(@"Exception caught in %@:\n\t%@\n%@",where,x,x.my_callStack);
     if( sExceptionReporter )
         sExceptionReporter(x);
-    [where release];
 }
 
 

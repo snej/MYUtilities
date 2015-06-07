@@ -15,7 +15,7 @@ void _AssertFailed(const void *selOrFn, const char *sourceFile, int sourceLine,
     if( message ) {
         va_list args;
         va_start(args,message);
-        message = [[[NSString alloc] initWithFormat: message arguments: args] autorelease];
+        message = [[NSString alloc] initWithFormat: message arguments: args];
         NSLog(@"*** ASSERTION FAILED: %@", message);
         message = [@"Assertion failed: " stringByAppendingString: message];
         va_end(args);

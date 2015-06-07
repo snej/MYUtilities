@@ -39,7 +39,6 @@
         NSData* data = [[NSData alloc] initWithBytesNoCopy: (void*)bytes length: length
                                               freeWhenDone: NO];
         block(data);
-        [data release];
     }];
 }
 

@@ -44,27 +44,6 @@ NSMutableDictionary* _mdictof(const _dictpair pairs[], size_t count)
 }
 
 
-NSArray* $apply( NSArray *src, SEL selector, id defaultValue )
-{
-    NSMutableArray *dst = [NSMutableArray arrayWithCapacity: src.count];
-    for( id obj in src ) {
-        id result = [obj performSelector: selector] ?: defaultValue;
-        [dst addObject: result];
-    }
-    return dst;
-}
-
-NSArray* $applyKeyPath( NSArray *src, NSString *keyPath, id defaultValue )
-{
-    NSMutableArray *dst = [NSMutableArray arrayWithCapacity: src.count];
-    for( id obj in src ) {
-        id result = [obj valueForKeyPath: keyPath] ?: defaultValue;
-        [dst addObject: result];
-    }
-    return dst;
-}
-
-
 BOOL $equal(id obj1, id obj2)      // Like -isEqual: but works even if either/both are nil
 {
     if( obj1 )
@@ -95,7 +74,7 @@ id _box(const void *value, const char *encoding)
         case 'f':   return [NSNumber numberWithFloat: *(float*)value];
         case 'd':   return [NSNumber numberWithDouble: *(double*)value];
         case '*':   return [NSString stringWithUTF8String: *(char**)value];
-        case '@':   return *(id*)value;
+        case '@':   return (__bridge id)*(void**)value;
         default:    return [NSValue value: value withObjCType: encoding];
     }
 }
@@ -126,8 +105,7 @@ id _castIf( Class requiredClass, id object )
 
 NSArray* _castArrayOf(Class itemClass, NSArray *a)
 {
-    id item;
-    foreach( item, $cast(NSArray,a) )
+    for(id item in $cast(NSArray,a) )
         _cast(itemClass,item);
     return a;
 }
@@ -135,50 +113,12 @@ NSArray* _castArrayOf(Class itemClass, NSArray *a)
 NSArray* _castIfArrayOf(Class itemClass, NSArray *a)
 {
     a = $castIf(NSArray,a);
-    id item;
-    foreach( item, a )
+    for(id item in a )
         if (!_castIf(itemClass,item))
             return nil;
     return a;
 }
 
-
-void setObj( id *var, id value )
-{
-    if( value != *var ) {
-        [*var release];
-        *var = [value retain];
-    }
-}
-
-BOOL ifSetObj( id *var, id value )
-{
-    if( value != *var && ![value isEqual: *var] ) {
-        [*var release];
-        *var = [value retain];
-        return YES;
-    } else {
-        return NO;
-    }
-}
-
-void setObjCopy( id *var, id valueToCopy ) {
-    if( valueToCopy != *var ) {
-        [*var release];
-        *var = [valueToCopy copy];
-    }
-}
-
-BOOL ifSetObjCopy( id *var, id value )
-{
-    if( value != *var && ![value isEqual: *var] ) {
-        [*var release];
-        *var = [value copy];
-        return YES;
-    } else {
-        return NO;
-    }
-}
 
 void cfSetObj(void *var, CFTypeRef value) {
     CFTypeRef oldValue = *(CFTypeRef*)var;
@@ -186,96 +126,6 @@ void cfSetObj(void *var, CFTypeRef value) {
         cfrelease(oldValue);
         *(CFTypeRef*)var = cfretain(value);
     }
-}
-
-
-NSString* $string( const char *utf8Str )
-{
-    if( utf8Str )
-        return [NSString stringWithCString: utf8Str encoding: NSUTF8StringEncoding];
-    else
-        return nil;
-}
-
-
-BOOL kvSetObj( id owner, NSString *property, id *varPtr, id value )
-{
-    if( *varPtr != value && ![*varPtr isEqual: value] ) {
-        [owner willChangeValueForKey: property];
-        [*varPtr autorelease];
-        *varPtr = [value retain];
-        [owner didChangeValueForKey: property];
-        return YES;
-    } else {
-        return NO;
-    }
-}
-
-
-BOOL kvSetObjCopy( id owner, NSString *property, id *varPtr, id value )
-{
-    if( *varPtr != value && ![*varPtr isEqual: value] ) {
-        [owner willChangeValueForKey: property];
-        [*varPtr autorelease];
-        *varPtr = [value copy];
-        [owner didChangeValueForKey: property];
-        return YES;
-    } else {
-        return NO;
-    }
-}
-
-
-BOOL kvSetSet( id owner, NSString *property, NSMutableSet *set, NSSet *newSet ) {
-    CAssert(set);
-    if (!newSet)
-        newSet = [NSSet set];
-    if (![set isEqualToSet: newSet]) {
-        [owner willChangeValueForKey: property
-                     withSetMutation:NSKeyValueSetSetMutation 
-                        usingObjects:newSet]; 
-        [set setSet: newSet];
-        [owner didChangeValueForKey: property 
-                    withSetMutation:NSKeyValueSetSetMutation 
-                       usingObjects:newSet]; 
-        return YES;
-    } else
-        return NO;
-}
-
-
-BOOL kvAddToSet( id owner, NSString *property, NSMutableSet *set, id objToAdd ) {
-    CAssert(set);
-    if (![set containsObject: objToAdd]) {
-        NSSet *changedObjects = [[NSSet alloc] initWithObjects: &objToAdd count: 1];
-        [owner willChangeValueForKey: property
-                     withSetMutation: NSKeyValueUnionSetMutation 
-                        usingObjects: changedObjects]; 
-        [set addObject: objToAdd];
-        [owner didChangeValueForKey: property 
-                    withSetMutation: NSKeyValueUnionSetMutation 
-                       usingObjects: changedObjects]; 
-        [changedObjects release];
-        return YES;
-    } else
-        return NO;
-}
-
-
-BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToRemove ) {
-    if ([set containsObject: objToRemove]) {
-        NSSet *changedObjects = [[NSSet alloc] initWithObjects: &objToRemove count: 1];
-        [owner willChangeValueForKey: property
-                     withSetMutation: NSKeyValueMinusSetMutation 
-                        usingObjects: changedObjects]; 
-        [set removeObject: objToRemove];
-        [owner didChangeValueForKey: property 
-                    withSetMutation: NSKeyValueMinusSetMutation 
-                       usingObjects: changedObjects]; 
-        [changedObjects release];
-        return YES;
-    } else
-        return NO;
 }
 
 
@@ -304,35 +154,15 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
     return [self indexOfObjectIdenticalTo: object] != NSNotFound;
 }
 
-- (NSArray*) my_arrayByApplyingSelector: (SEL)selector
-{
-    return [self my_arrayByApplyingSelector: selector withObject: nil];
-}
 
-- (NSArray*) my_arrayByApplyingSelector: (SEL)selector withObject: (id)object
-{
-    NSUInteger count = [self count];
-    NSMutableArray *temp = [[NSMutableArray alloc] initWithCapacity: count];
-    NSArray *result;
-    NSUInteger i;
-    for( i=0; i<count; i++ )
-        [temp addObject: [[self objectAtIndex: i] performSelector: selector withObject: object]];
-    result = [NSArray arrayWithArray: temp];
-    [temp release];
-    return result;
-}
-
-#if NS_BLOCKS_AVAILABLE
 - (NSArray*) my_map: (id (^)(id obj))block {
     NSMutableArray* mapped = [[NSMutableArray alloc] initWithCapacity: self.count];
     for (id obj in self) {
-        obj = block(obj);
-        if (obj)
-            [mapped addObject: obj];
+        id mappedObj = block(obj);
+        if (mappedObj)
+            [mapped addObject: mappedObj];
     }
-    NSArray* result = [[mapped copy] autorelease];
-    [mapped release];
-    return result;
+    return [mapped copy];
 }
 
 - (NSArray*) my_filter: (int (^)(id obj))block {
@@ -341,11 +171,9 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
         if (block(obj))
             [filtered addObject: obj];
     }
-    NSArray* result = [[filtered copy] autorelease];
-    [filtered release];
-    return result;
+    return [filtered copy];
 }
-#endif
+
 
 - (NSString*) my_compactDescription
 {
@@ -367,7 +195,6 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 
 
 
-#if NS_BLOCKS_AVAILABLE
 @implementation NSMutableArray (MYUtils)
 
 - (void) my_removeMatching: (int (^)(id obj))block {
@@ -378,7 +205,6 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 }
 
 @end
-#endif
 
 
 
@@ -399,7 +225,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
     else {
         NSMutableSet *result = [set1 mutableCopy];
         [result unionSet: set2];
-        return [result autorelease];
+        return result;
     }
 }
 
@@ -412,7 +238,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
     else {
         NSMutableSet *result = [set1 mutableCopy];
         [result intersectSet: set2];
-        return [result autorelease];
+        return result;
     }
 }
 
@@ -425,7 +251,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
     else {
         NSMutableSet *result = [set1 mutableCopy];
         [result minusSet: set2];
-        return [result autorelease];
+        return result;
     }
 }
 
@@ -453,7 +279,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
     return desc;
 }
 
-#if NS_BLOCKS_AVAILABLE
+
 - (NSDictionary*) my_dictionaryByUpdatingValues: (id (^)(id key, id value))block {
     __block NSMutableDictionary* updated = nil;
     [self enumerateKeysAndObjectsUsingBlock: ^(id key, id value, BOOL *stop) {
@@ -464,9 +290,9 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
             [updated setValue: nuValue forKey: key];
         }
     }];
-    return updated ? [updated autorelease] : self;
+    return updated ?: self;
 }
-#endif
+
 
 @end
 
@@ -474,7 +300,7 @@ BOOL kvRemoveFromSet( id owner, NSString *property, NSMutableSet *set, id objToR
 @implementation NSData (MYUtils)
 
 - (NSString*) my_UTF8ToString {
-    return [[[NSString alloc] initWithData: self encoding: NSUTF8StringEncoding] autorelease];
+    return [[NSString alloc] initWithData: self encoding: NSUTF8StringEncoding];
 }
 
 @end
@@ -538,12 +364,12 @@ TestCase(CollectionUtils) {
     //Log(@"a = %@",a);
     NSArray *aa = [NSArray arrayWithObjects: @"foo",@"bar",@"baz",nil];
     CAssertEqual(a,aa);
-    
+
     const char *cstr = "a C string";
     id o = $object(cstr);
     //Log(@"o = %@",o);
     CAssertEqual(o,@"a C string");
-    
+
     NSDictionary *d = $dict({@"int",    $object(1)},
                             {@"double", $object(-1.1)},
                             {@"char",   $object('x')},

@@ -45,7 +45,7 @@
 - (NSString*) my_pathAndQuery {
     CFStringRef path = CFURLCopyPath((CFURLRef)self);
     CFStringRef resource = CFURLCopyResourceSpecifier((CFURLRef)self);
-    NSString* result = [(id)path stringByAppendingString: (id)resource];
+    NSString* result = [(__bridge id)path stringByAppendingString: (__bridge id)resource];
     CFRelease(path);
     CFRelease(resource);
     return result;
@@ -75,8 +75,8 @@
     nBytes -= delEnd - userRange.location;
     CFURLRef newURL = CFURLCreateWithBytes(NULL, urlBytes, nBytes,
                                            kCFStringEncodingUTF8,  NULL);
-    Assert(newURL != nil);
-    return [(id)newURL autorelease];
+    Assert(newURL != NULL);
+    return CFBridgingRelease(newURL);
 }
 
 
@@ -85,12 +85,11 @@
 {
     NSString* protocol = self.my_isHTTPS ? NSURLProtectionSpaceHTTPS
                                          : NSURLProtectionSpaceHTTP;
-    return [[[NSURLProtectionSpace alloc] initWithHost: self.host
-                                                  port: self.my_effectivePort
-                                              protocol: protocol
-                                                 realm: realm
-                                  authenticationMethod: authenticationMethod]
-            autorelease];
+    return [[NSURLProtectionSpace alloc] initWithHost: self.host
+                                                 port: self.my_effectivePort
+                                             protocol: protocol
+                                                realm: realm
+                                 authenticationMethod: authenticationMethod];
 }
 
 
@@ -148,10 +147,7 @@
     NSString* after = [[NSString alloc] initWithBytes: &urlBytes[passEnd]
                                                length: (nBytes - passEnd)
                                              encoding:NSUTF8StringEncoding];
-    NSString* result = [NSString stringWithFormat: @"%@*****%@", before, after];
-    [before release];
-    [after release];
-    return result;
+    return [NSString stringWithFormat: @"%@*****%@", before, after];
 }
 
 
