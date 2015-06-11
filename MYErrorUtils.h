@@ -51,6 +51,12 @@ NSError *MYErrorFromErrno(void);
  */
 NSString* MYErrorName( NSString *domain, NSInteger code );
 
+/** Maps an error to a different error.
+    The keys of `map` are error domains, and the values are dictionaries.
+    Each dictionary's keys are error codes, and the values are arrays [domain, code].
+    If there's no match, the original error is returned. */
+NSError* MYMapError(NSError* error, NSDictionary* map);
+
 @interface NSError (MYUtilities)
 /** Prepends a message to the beginning of the receiver's existing message,
     and returns the modified NSError. */

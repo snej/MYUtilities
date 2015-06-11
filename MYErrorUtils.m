@@ -172,6 +172,22 @@ NSString* MYErrorName( NSString *domain, NSInteger code ) {
 }
 
 
+// map is [domain -> [code -> (domain, code)]
+NSError* MYMapError(NSError* error, NSDictionary* map) {
+    if (error) {
+        NSDictionary* codeMap = map[error.domain];
+        if (codeMap) {
+            NSArray* nu = codeMap[@(error.code)];
+            if (nu) {
+                return [NSError errorWithDomain: nu[0] code: [nu[1] integerValue]
+                                       userInfo: @{NSUnderlyingErrorKey: error}];
+            }
+        }
+    }
+    return error;
+}
+
+
 
 
 @implementation NSError (MYUtils)
@@ -216,9 +232,6 @@ NSString* MYErrorName( NSString *domain, NSInteger code ) {
         || ($equal(domain, NSCocoaErrorDomain) && (code == NSFileNoSuchFileError
                                                    || code == NSFileReadNoSuchFileError));
 }
-
-
-
 
 @end
 
