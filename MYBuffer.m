@@ -106,6 +106,7 @@
 }
 
 - (BOOL) writeContentsOfStream: (NSInputStream*)inputStream {
+    [inputStream open];
     _writingChunk = nil;
     [_chunks addObject: inputStream];
     return YES;
