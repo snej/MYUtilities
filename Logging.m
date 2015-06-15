@@ -97,7 +97,7 @@ static void InitLogging()
                     NSString* trimmedKey = [key substringFromIndex: 3]; // trim 'Log'
                     [sEnabledDomains addObject: trimmedKey];
                     if (trimmedKey.length > 7 && [trimmedKey hasSuffix: @"Verbose"]) {
-                        trimmedKey = [trimmedKey substringToIndex: key.length - 7]; // trim 'Verbose'
+                        trimmedKey = [trimmedKey substringToIndex: trimmedKey.length - 7]; // trim 'Verbose'
                         [sEnabledDomains addObject: trimmedKey];
                     }
                 }
