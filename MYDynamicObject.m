@@ -264,7 +264,29 @@ BOOL MYGetPropertyInfo(Class cls,
 }
 
 
-Class MYClassFromType(const char* propertyType) {
+// subroutine for MY___FromType. Invokes callback first with a module-qualified name (if any),
+// then if that returns nil, with the base name. Necessary because the class name in the metadata
+// doesn't include the class's module, so we have to guess it. (rdar://21368142)
+static id lookUp(const char* baseName, Class relativeToClass, id (^callback)(const char*)) {
+    if (relativeToClass && !strchr(baseName, '.')) {
+        const char* relativeName = class_getName(relativeToClass);
+        const char* dot = strchr(relativeName, '.');
+        if (dot) {
+            // relativeToClass is in a module, so first look for baseName in that module:
+            int moduleLen = (int)(dot - relativeName);
+            char fullName[moduleLen + strlen(baseName) + 2];
+            sprintf(fullName, "%.*s.%s", moduleLen, relativeName, baseName);
+            id result = callback(fullName);
+            if (result)
+                return result;
+            // ...if not found in module, try again in without a module...
+        }
+    }
+    return callback(baseName);
+}
+
+
+Class MYClassFromType(const char* propertyType, Class relativeToClass) {
     size_t len = strlen(propertyType);
     if (propertyType[0] != _C_ID)
         return NULL;
@@ -282,18 +304,24 @@ Class MYClassFromType(const char* propertyType) {
             return Nil;     // It's a pure protocol name
         *bracket = '\0';    // Strip any trailing protocol name(s)
     }
-    return objc_getClass(className);
+
+    return lookUp(className, relativeToClass, ^(const char* name) {
+        return objc_getClass(name);
+    });
 }
 
 
-Protocol* MYProtocolFromType(const char* propertyType) {
+Protocol* MYProtocolFromType(const char* propertyType, Class relativeToClass) {
     size_t len = strlen(propertyType);
     if (propertyType[0] != _C_ID || propertyType[1] != '"' || propertyType[len-1] != '"'
                                  || propertyType[2] != '<' || propertyType[len-2] != '>')
         return NULL;
     char protocolName[len - 4];
     strlcpy(protocolName, propertyType + 3, len - 4);
-    return objc_getProtocol(protocolName);
+
+    return lookUp(protocolName, relativeToClass, ^(const char* name) {
+        return objc_getProtocol(name);
+    });
 }
 
 
@@ -302,7 +330,7 @@ Protocol* MYProtocolFromType(const char* propertyType) {
     const char* propertyType;
     if (!MYGetPropertyInfo(self, propertyName, NO, &declaredInClass, &propertyType))
         return Nil;
-    return MYClassFromType(propertyType);
+    return MYClassFromType(propertyType, self);
 }
 
 
@@ -351,10 +379,10 @@ Protocol* MYProtocolFromType(const char* propertyType) {
 + (IMP) impForGetterOfProperty: (NSString*)property ofType: (const char*)propertyType {
     switch (propertyType[0]) {
         case _C_ID: {
-            Class klass = MYClassFromType(propertyType);
+            Class klass = MYClassFromType(propertyType, self);
             if (klass)
                 return [self impForGetterOfProperty: property ofClass: klass];
-            Protocol* proto = MYProtocolFromType(propertyType);
+            Protocol* proto = MYProtocolFromType(propertyType, self);
             if (proto)
                 return [self impForGetterOfProperty: property ofProtocol: proto];
             Warn(@"MYDynamicObject: %@.%@ has type %s which is not a known class or protocol",
@@ -445,10 +473,10 @@ Protocol* MYProtocolFromType(const char* propertyType) {
 + (IMP) impForSetterOfProperty: (NSString*)property ofType: (const char*)propertyType {
     switch (propertyType[0]) {
         case _C_ID: {
-            Class klass = MYClassFromType(propertyType);
+            Class klass = MYClassFromType(propertyType, self);
             if (klass)
                 return [self impForSetterOfProperty: property ofClass: klass];
-            Protocol* proto = MYProtocolFromType(propertyType);
+            Protocol* proto = MYProtocolFromType(propertyType, self);
             if (proto)
                 return [self impForSetterOfProperty: property ofProtocol: proto];
             Warn(@"MYDynamicObject: %@.%@ has type %s which is not a known class or protocol",
