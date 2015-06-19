@@ -46,6 +46,10 @@ static SecCertificateRef addCertToKeychain(NSData* certData, NSString* label,
                                            NSError** outError);
 static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInterval);
 
+#if TARGET_OS_IPHONE
+static void removePublicKey(SecKeyRef publicKey);
+#endif
+
 
 SecIdentityRef MYGetOrCreateAnonymousIdentity(NSString* label,
                                               NSTimeInterval expirationInterval,
@@ -65,6 +69,7 @@ SecIdentityRef MYGetOrCreateAnonymousIdentity(NSString* label,
         if (!certRef)
             return NULL;
 #if TARGET_OS_IPHONE
+        removePublicKey(publicKey); // workaround for Radar 18205627
         ident = findIdentity(label, expirationInterval);
         if (!ident)
             checkErr(errSecItemNotFound, outError);
@@ -182,6 +187,19 @@ static NSData* getPublicKeyData(SecKeyRef publicKey) {
     return (NSData*)CFBridgingRelease(data);
 #endif
 }
+
+
+#if TARGET_OS_IPHONE
+// workaround for Radar 18205627: When iOS reads an identity from the keychain, it may accidentally
+// get the public key instead of the private key. The workaround is to remove the public key so
+// that only the private one is obtainable. --jpa 6/2015
+static void removePublicKey(SecKeyRef publicKey) {
+    NSDictionary* query = @{(__bridge id)kSecValueRef: (__bridge id)publicKey};
+    OSStatus err = SecItemDelete((__bridge CFDictionaryRef)query);
+    if (err)
+        Warn(@"Couldn't delete public key: err %d", (int)err);
+}
+#endif
 
 
 // Signs a data blob using a private key. Padding is PKCS1 with SHA-1 digest.
