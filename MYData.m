@@ -115,7 +115,7 @@ BOOL MYSliceReadSlice(MYSlice* slice, size_t count, MYSlice* outResult) {
 
 
 TestCase(VarInt) {
-    struct {UInt64 number; unsigned len; UInt8 encoded[12];} tests[] = {
+    struct {UInt64 number; ptrdiff_t len; UInt8 encoded[12];} tests[] = {
         {0x0000, 1, {0x00}},
         {0x0013, 1, {0x13}},
         {0x007F, 1, {0x7F}},
