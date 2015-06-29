@@ -250,11 +250,16 @@ void Warn( NSString *msg, ... )
 #else
     _Logv(kWarningPrefix,msg,args);
 #endif
-    if (gMYWarnRaisesException)
+    va_end(args);
+
+    if (gMYWarnRaisesException) {
+        va_list args;
+        va_start(args,msg);
         [NSException raise: NSInternalInconsistencyException
                     format: [@"Warn() was called: " stringByAppendingString: msg]
                  arguments: args];
-    va_end(args);
+        va_end(args);
+    }
 }
 
 
