@@ -103,6 +103,13 @@ id _castIf( Class requiredClass, id object )
     return object;
 }
 
+id _castIfProto( Protocol* requiredProtocol, id object )
+{
+    if( object && ! [object conformsToProtocol: requiredProtocol] )
+        object = nil;
+    return object;
+}
+
 NSArray* _castArrayOf(Class itemClass, NSArray *a)
 {
     for(id item in $cast(NSArray,a) )

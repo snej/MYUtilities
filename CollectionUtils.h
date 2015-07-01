@@ -37,6 +37,7 @@ BOOL $equal(id obj1, id obj2);      // Like -isEqual: but works even if either/b
 #define $castIf(CLASSNAME,OBJ)      ((CLASSNAME*)(_castIf([CLASSNAME class],(OBJ))))
 #define $castArrayOf(ITEMCLASSNAME,OBJ) _castArrayOf([ITEMCLASSNAME class],(OBJ))
 #define $castIfArrayOf(ITEMCLASSNAME,OBJ) _castIfArrayOf([ITEMCLASSNAME class],(OBJ))
+#define $castIfProtocol(PROTONAME,OBJ) ((id<PROTONAME>)(_castIfProto(@protocol(PROTONAME),(OBJ))))
 
 
 static inline CFTypeRef cfretain(CFTypeRef obj) {if (obj) CFRetain(obj); return obj;}
@@ -124,5 +125,6 @@ id _box(const void *value, const char *encoding);
 id _cast(Class,id);
 id _castNotNil(Class,id);
 id _castIf(Class,id);
+id _castIfProto(Protocol*,id);
 NSArray* _castArrayOf(Class,NSArray*);
 NSArray* _castIfArrayOf(Class,NSArray*);
