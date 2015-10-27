@@ -42,7 +42,7 @@ typedef enum {
 
 
 int _gShouldLog = -1;
-void (^MYLoggingCallback)(NSString* domain, NSString* message) = nil;
+BOOL (^MYLoggingCallback)(NSString* domain, NSString* message) = nil;
 
 static MYLoggingTo sLoggingTo;
 static NSMutableSet *sEnabledDomains;
@@ -169,8 +169,10 @@ static void _Logv( NSString *prefix, NSString *msg, va_list args )
 {
     if (MYLoggingCallback) {
         msg = [[NSString alloc] initWithFormat: msg arguments: args];
-        MYLoggingCallback(prefix, msg);
-    } else if (sLoggingTo > kLoggingToOther) {
+        if (!MYLoggingCallback(prefix, msg))
+            return;
+    }
+    if (sLoggingTo > kLoggingToOther) {
         @autoreleasepool {
             static NSDateFormatter *sTimestampFormat;
             if( ! sTimestampFormat ) {
