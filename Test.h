@@ -101,6 +101,22 @@ void AfterThisTest(void (^block)());
 
 #define AssertAbstractMethod()  _AssertAbstractMethodFailed(self,_cmd);
 
+// DAssert variants are suppressed in Release builds, for use in performance-sensitive code
+#if DEBUG
+#define DAssert         Assert
+#define DAssertEqual    AssertEqual
+#define DAssertEq       AssertEq
+#define DAssertNil      AssertNil
+#define DAssertNull     AssertNull
+#else
+#define DAssert(COND,MSG...)         do{ }while(0)
+#define DAssertEqual(VAL,EXPECTED)   do{ }while(0)
+#define DAssertEq(VAL,EXPECTED)      do{ }while(0)
+#define DAssertAlmostEq(N1,N2, TOL)  do{ }while(0)
+#define DAssertNil(VAL)              do{ }while(0)
+#define DAssertNull(VAL)             do{ }while(0)
+#endif
+
 // These were for use in functions; not necessary anymore
 #define CAssert Assert
 #define CAssertEqual AssertEqual
