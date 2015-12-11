@@ -62,21 +62,23 @@
 
 - (BOOL) beginBackgroundTaskNamed: (NSString*)name {
     @synchronized(self) {
-        Assert(_bgTask == UIBackgroundTaskInvalid);
-        _bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithName: name
-                                                               expirationHandler: ^{
-            // Process ran out of background time before endBackgroundTask was called:
-            [self endBackgroundTask];
-            if (_onBackgroundTaskExpired)
-                _onBackgroundTaskExpired();
-        }];
-        return (_bgTask != UIBackgroundTaskInvalid);
-    }
+		if (_bgTask == UIBackgroundTaskInvalid) {
+			_bgTask = [[UIApplication sharedApplication]
+					   beginBackgroundTaskWithName: name
+					   expirationHandler: ^{
+						   // Process ran out of background time before endBackgroundTask was called:
+						   [self endBackgroundTask];
+						   if (_onBackgroundTaskExpired)
+							   _onBackgroundTaskExpired();
+					   }];
+		}
+		return (_bgTask != UIBackgroundTaskInvalid);
+	}
 }
 
 
 - (BOOL) hasBackgroundTask {
-    @synchronized(self) {
+	@synchronized(self) {
         return _bgTask != UIBackgroundTaskInvalid;
     }
 }
