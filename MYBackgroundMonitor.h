@@ -22,8 +22,9 @@
     Only one background task can be active at a time. */
 - (BOOL) beginBackgroundTaskNamed: (NSString*)name;
 
-/** Tells the OS that the current background task is done. */
-- (void) endBackgroundTask;
+/** Tells the OS that the current background task is done.
+    @return  YES if there was a background task, NO if none was running. */
+- (BOOL) endBackgroundTask;
 
 /** YES if there is currently a background task. */
 @property (readonly) BOOL hasBackgroundTask;
