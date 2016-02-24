@@ -129,7 +129,7 @@ TestCase(VarInt) {
     UInt8 buf[12];
     for (size_t i=0; i<sizeof(tests)/sizeof(*tests); i++) {
         UInt8* dst = MYEncodeVarUInt(buf, tests[i].number);
-        Log(@"VarInt encoded 0x%llx --> %@", tests[i].number, [NSData dataWithBytes: buf length: dst-buf]);
+        //Log(@"VarInt encoded 0x%llx --> %@", tests[i].number, [NSData dataWithBytes: buf length: dst-buf]);
         CAssertEq(dst-buf, tests[i].len);
         CAssert(memcmp(buf, tests[i].encoded, tests[i].len) == 0);
 

@@ -8,6 +8,7 @@
 
 #import "MYErrorUtils.h"
 #import "Test.h"
+#import "MYLogging.h"
 #import "CollectionUtils.h"
 #import <Foundation/Foundation.h>
 
@@ -52,8 +53,9 @@ BOOL MYReturnError( NSError **outError,
             *outError = MYMakeErrorV(errorCode, domain, messageFormat, args);
             va_end(args);
             Log(@"MYReturnError: %@",*outError);
-        } else
+        } else {
             Log(@"MYReturnError: %@/%i",domain,errorCode);
+        }
         return NO;
     } else
         return YES;
