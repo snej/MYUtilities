@@ -8,30 +8,14 @@
 
 #import <Foundation/Foundation.h>
 
-/*
-    This is a configurable console-logging facility that lets logging be turned on and off
-    independently for various subsystems or areas of the code. It's used similarly to NSLog:
-        Log(@"the value of foo is %@", foo);
-    You can associate a log message with a particular subsystem or tag by calling LogTo:
-        LogTo(FooVerbose, @"the value of foo is %@", foo);
- 
-    By default, logging is compiled in but disabled at runtime.
 
-    To enable logging in general, set the user default 'Log' to 'YES'. You can do this persistently using the 'defaults write' command; but it's very convenient during development to use the Arguments tab in the Xcode Executable Info panel. Just add a new entry to the arguments list, of the form "-Log YES". Now you can check and uncheck that as desired; the change will take effect when relaunching.
-
-    Once logging is enabled, you can turn on and off individual categories of logs. For any category "Something", to enable output from calls of the form LogTo(Something, @"..."), set the user default 'LogSomething' to 'YES', just as above.
- 
-    To disable logging code from being compiled at all, define the preprocessor symbol
-    MY_DISABLE_LOGGING (in your prefix header or target build settings.)
-
-    Warn() is a related function that _always_ logs, and prefixes the message with "WARNING***".
-        Warn(@"Reactor coolant system has failed");
- 
-    Note: Logging is still present in release/nondebug builds. I've found this to be very useful in tracking down problems in the field, since I can tell a user how to turn on logging, and then get detailed logs back.
-*/ 
+/* NOTE: This is the old/legacy logging API. The new one is MYLogging.h. */
 
 
 NSString* LOC( NSString *key );     // Localized string lookup
+
+
+#ifndef MYLOGGING   // Don't interfere with MYLogging.h if it's already been included
 
 
 #define Warn Warn
@@ -81,3 +65,5 @@ BOOL _EnableLogTo( NSString *domain, BOOL enable );
 #endif // MY_DISABLE_LOGGING
 
 void Warn( NSString *msg, ... ) __attribute__((format(__NSString__, 1, 2)));
+
+#endif // MYLOGGING

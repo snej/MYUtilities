@@ -1,5 +1,5 @@
 //
-//  CouchDynamicObject.m
+//  MYDynamicObject.m
 //  MYUtilities
 //
 //  Created by Jens Alfke on 8/6/09.
@@ -17,6 +17,9 @@
 #else
 #define USE_BLOCKS (MAC_OS_X_VERSION_MIN_REQUIRED >= 1070)
 #endif
+
+
+DefineLogDomain(Model);
 
 
 @implementation MYDynamicObject
@@ -239,7 +242,7 @@ BOOL MYGetPropertyInfo(Class cls,
     objc_property_t property = class_getProperty(cls, name);
     if (!property) {
         if (![propertyName hasPrefix: @"primitive"]) {   // Ignore "primitiveXXX" KVC accessors
-            LogTo(MYDynamicObject,@"%@ has no dynamic property named '%@' -- failure likely",
+            LogTo(Model, @"%@ has no dynamic property named '%@' -- failure likely",
                   cls, propertyName);
         }
         *propertyType = NULL;
@@ -600,7 +603,7 @@ Protocol* MYProtocolFromType(const char* propertyType, Class relativeToClass) {
     }
     
     if (accessor) {
-        LogTo(MYDynamicObject, @"Creating dynamic accessor method -[%@ %s]", declaredInClass, name);
+        LogVerbose(Model, @"Creating dynamic accessor method -[%@ %s]", declaredInClass, name);
         class_addMethod(declaredInClass, sel, accessor, signature);
         return YES;
     }
