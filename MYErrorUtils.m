@@ -9,6 +9,7 @@
 #import "MYErrorUtils.h"
 #import "Test.h"
 #import "MYLogging.h"
+#import "MYURLUtils.h"
 #import "CollectionUtils.h"
 #import <Foundation/Foundation.h>
 
@@ -233,6 +234,33 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
     return ($equal(domain, NSPOSIXErrorDomain) && code == ENOENT)
         || ($equal(domain, NSCocoaErrorDomain) && (code == NSFileNoSuchFileError
                                                    || code == NSFileReadNoSuchFileError));
+}
+
+- (NSString*) my_compactDescription {
+    NSDictionary* userInfo = self.userInfo;
+    NSMutableString* s = [NSMutableString stringWithFormat: @"%@[%zd",
+                          self.domain, self.code];
+    NSString* desc = userInfo[NSLocalizedDescriptionKey];
+    if (!desc) {
+        id (^provider)(NSError *err, NSString *userInfoKey) = [NSError userInfoValueProviderForDomain: self.domain];
+        if (provider)
+            desc = provider(self, NSLocalizedDescriptionKey);
+    }
+    if (desc)
+        [s appendFormat: @", \"%@\"", desc];
+    NSURL* url = userInfo[NSURLErrorFailingURLErrorKey];
+    if (url)
+        [s appendFormat: @", <%@>", url.my_sanitizedString];
+    NSString* filePath = userInfo[NSFilePathErrorKey];
+    if (filePath)
+        [s appendFormat: @", '%@'", filePath];
+    [s appendString: @"]"];
+    NSError* underlying = userInfo[NSUnderlyingErrorKey];
+    if (underlying) {
+        [s appendString: @"<--"];
+        [s appendString: underlying.my_compactDescription];
+    }
+    return s;
 }
 
 @end

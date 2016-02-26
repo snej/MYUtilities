@@ -15,6 +15,6 @@ NSRegularExpression* $regex( NSString* pattern ) {
     NSRegularExpression* r = [NSRegularExpression regularExpressionWithPattern: pattern
                                                                        options: 0
                                                                          error: &error];
-    CAssert(r, @"Invalid regex '%@': %@", pattern, error.localizedDescription);
+    CAssert(r, @"Invalid regex '%@': %@", pattern, error.my_compactDescription);
     return r;
 }
