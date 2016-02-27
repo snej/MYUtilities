@@ -13,6 +13,10 @@
 #import "CollectionUtils.h"
 #import <Foundation/Foundation.h>
 
+#if TARGET_OS_IPHONE
+#undef MYERRORUTILS_USE_SECURITY_API
+#endif
+
 #if MYERRORUTILS_USE_SECURITY_API
 #import <Security/SecBase.h>
 #endif
@@ -110,22 +114,19 @@ static NSString* printableErrorCode( NSInteger code ) {
 
 static NSString* MYShortErrorDomainName( NSString *domain ) {
     if ([domain hasPrefix: @"kCFErrorDomain"])
-        domain = [domain substringFromIndex: 14];
+        domain = $sprintf(@"CF%@Error", [domain substringFromIndex: 14]);
     else {
-        if ([domain hasSuffix: @"ErrorDomain"])
-            domain = [domain substringToIndex: domain.length - 11];
-        if ([domain hasPrefix: @"NS"])
-            domain = [domain substringFromIndex: 2];
+        if ([domain hasSuffix: @"Domain"])
+            domain = [domain substringToIndex: domain.length - 6];
     }
     return domain;
 }
 
-NSString* MYErrorName( NSString *domain, NSInteger code ) {
+static NSString* MYErrorDesc( NSString *domain, NSInteger code ) {
     if (code == 0)
         return nil;
-    NSString *codeStr = printableErrorCode(code);
     if (!domain)
-        return codeStr;
+        return printableErrorCode(code);
     NSString *result = nil;
     
     if ($equal(domain,NSPOSIXErrorDomain)) {
@@ -151,42 +152,53 @@ NSString* MYErrorName( NSString *domain, NSInteger code ) {
             result = [NSString stringWithCString: name encoding: NSMacOSRomanStringEncoding];
         else {
 #if MYERRORUTILS_USE_SECURITY_API
-            result = (id) SecCopyErrorMessageString((OSStatus)code,NULL);
-            if (result) {
-                [NSMakeCollectable(result) autorelease];
-                if ([result hasPrefix: @"OSStatus "])
-                    result = nil; // just a generic message
-            }
+            NSString* msg = CFBridgingRelease(SecCopyErrorMessageString((OSStatus)code,NULL));
+            if (![msg hasPrefix: @"OSStatus "])
+                result = $sprintf(@"SecError: %@", msg);
 #endif
         }
     }
 #endif
-    
+
+#if MYERRORUTILS_USE_STRINGS_FILE
     if (!result) {
         // Look up errors in string files keyed by the domain name:
+        NSString *codeStr = printableErrorCode(code);
         NSString *table = [@"MYError_" stringByAppendingString: domain];
         result = [[NSBundle mainBundle] localizedStringForKey: codeStr value: @"?" table: table];
         if ([result isEqualToString: @"?"])
             result = nil;
     }
-    
-    codeStr = $sprintf(@"%@ %@", MYShortErrorDomainName(domain), codeStr);;
+#endif
+    return result;
+}
+
+NSString* MYErrorName( NSString *domain, NSInteger code ) {
+    NSString* result = MYErrorDesc(domain, code);
+    NSString* codeStr = $sprintf(@"%@ %@", MYShortErrorDomainName(domain), printableErrorCode(code));
     return result ? $sprintf(@"%@ (%@)", result, codeStr) : codeStr;
+}
+
+
+NSError* MYWrapError(NSError* error, NSString* domain, NSInteger code, NSDictionary* userInfo) {
+    NSMutableDictionary* info = userInfo ? userInfo.mutableCopy : $mdict();
+    info[NSUnderlyingErrorKey] = error;
+    if (!info[NSLocalizedDescriptionKey]) {
+        NSString* desc = error.my_nonDefaultLocalizedDescription;
+        if (desc)
+            info[NSLocalizedDescriptionKey] = desc;
+    }
+    return [NSError errorWithDomain: domain code: code userInfo: info];
 }
 
 
 // map is [domain -> [code -> (domain, code)]
 NSError* MYMapError(NSError* error, NSDictionary* map) {
-    if (error) {
-        NSDictionary* codeMap = map[error.domain];
-        if (codeMap) {
-            NSArray* nu = codeMap[@(error.code)];
-            if (nu) {
-                return [NSError errorWithDomain: nu[0] code: [nu[1] integerValue]
-                                       userInfo: @{NSUnderlyingErrorKey: error}];
-            }
-        }
-    }
+    if (!error) return nil;
+    NSDictionary* codeMap = map[error.domain];
+    NSArray* nu = codeMap[@(error.code)];
+    if (nu)
+        return MYWrapError(error, nu[0], [nu[1] integerValue], nil);
     return error;
 }
 
@@ -239,16 +251,16 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
 - (NSString*) my_compactDescription {
     NSDictionary* userInfo = self.userInfo;
     NSMutableString* s = [NSMutableString stringWithFormat: @"%@[%zd",
-                          self.domain, self.code];
-    NSString* desc = userInfo[NSLocalizedDescriptionKey];
-    if (!desc) {
-        id (^provider)(NSError *err, NSString *userInfoKey) = [NSError userInfoValueProviderForDomain: self.domain];
-        if (provider)
-            desc = provider(self, NSLocalizedDescriptionKey);
-    }
+                          MYShortErrorDomainName(self.domain), self.code];
+    NSString* desc = self.my_nonDefaultLocalizedDescription;
     if (desc)
         [s appendFormat: @", \"%@\"", desc];
-    NSURL* url = userInfo[NSURLErrorFailingURLErrorKey];
+    NSURL *url = userInfo[NSURLErrorFailingURLErrorKey] ?: userInfo[NSURLErrorKey];
+    if (!url) {
+        NSString* urlStr = userInfo[NSURLErrorFailingURLStringErrorKey];
+        if (urlStr)
+            url = [NSURL URLWithString: urlStr];
+    }
     if (url)
         [s appendFormat: @", <%@>", url.my_sanitizedString];
     NSString* filePath = userInfo[NSFilePathErrorKey];
@@ -261,6 +273,21 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
         [s appendString: underlying.my_compactDescription];
     }
     return s;
+}
+
+- (NSString*) my_nonDefaultLocalizedDescription {
+    NSString* desc = self.userInfo[NSLocalizedDescriptionKey];
+    if (desc)
+        return desc;
+    id (^provider)(NSError *err, NSString *userInfoKey) =
+                                            [NSError userInfoValueProviderForDomain: self.domain];
+    if (provider) {
+        desc = provider(self, NSLocalizedDescriptionKey)
+                ?: provider(self, NSLocalizedFailureReasonErrorKey);
+    }
+    if (!desc)
+        desc = MYErrorDesc(self.domain, self.code);
+    return desc;
 }
 
 @end

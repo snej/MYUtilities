@@ -51,6 +51,9 @@ NSError *MYErrorFromErrno(void);
  */
 NSString* MYErrorName( NSString *domain, NSInteger code );
 
+/** Returns a new NSError that points to the original one as its underlying error. */
+NSError* MYWrapError(NSError* error, NSString* domain, NSInteger code, NSDictionary* userInfo);
+
 /** Maps an error to a different error.
     The keys of `map` are error domains, and the values are dictionaries.
     Each dictionary's keys are error codes, and the values are arrays [domain, code].
@@ -72,4 +75,5 @@ NSError* MYMapError(NSError* error, NSDictionary* map);
 /** A nice informative-but-compact description of an NSError, for logging. */
 @property (readonly) NSString* my_compactDescription;
 
+@property (readonly) NSString* my_nonDefaultLocalizedDescription;
 @end
