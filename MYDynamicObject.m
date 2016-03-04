@@ -574,7 +574,7 @@ Protocol* MYProtocolFromType(const char* propertyType, Class relativeToClass) {
     const char *name = sel_getName(sel);
     NSString* key;
     Class declaredInClass;
-    const char *propertyType;
+    const char *propertyType = NULL;
     char signature[5];
     IMP accessor = NULL;
     
