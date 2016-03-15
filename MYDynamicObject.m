@@ -7,6 +7,7 @@
 //
 
 #import "MYDynamicObject.h"
+#import "MYLogging.h"
 #import "Test.h"
 #import <ctype.h>
 #import <objc/runtime.h>
