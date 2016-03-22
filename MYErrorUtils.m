@@ -279,11 +279,13 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
     NSString* desc = self.userInfo[NSLocalizedDescriptionKey];
     if (desc)
         return desc;
-    id (^provider)(NSError *err, NSString *userInfoKey) =
-                                            [NSError userInfoValueProviderForDomain: self.domain];
-    if (provider) {
-        desc = provider(self, NSLocalizedDescriptionKey)
-                ?: provider(self, NSLocalizedFailureReasonErrorKey);
+    if ([[NSError class] respondsToSelector: @selector(userInfoValueProviderForDomain:)]) {
+        id (^provider)(NSError *err, NSString *userInfoKey) =
+                                                [NSError userInfoValueProviderForDomain: self.domain];
+        if (provider) {
+            desc = provider(self, NSLocalizedDescriptionKey)
+                    ?: provider(self, NSLocalizedFailureReasonErrorKey);
+        }
     }
     if (!desc)
         desc = MYErrorDesc(self.domain, self.code);
