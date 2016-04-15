@@ -214,13 +214,16 @@ static MYLogDomain sWarningDomain = {1, "WARNING", NULL};
 
 static void _Logv(const MYLogDomain* domain, NSString *msg, va_list args) {
     @autoreleasepool {
+        // Format the message:
+        msg = [[NSString alloc] initWithFormat: msg arguments: args];
         BOOL hasDomain = domain && strcmp(domain->name, "MYDefault") != 0;
+
         if (MYLoggingCallback) {
-            msg = [[NSString alloc] initWithFormat: msg arguments: args];
             NSString* prefix = hasDomain ? @(domain->name) : nil;
             if (!MYLoggingCallback(prefix, msg))
                 return;
         }
+
         if (loggingMode() > kLoggingToOther) {
             static NSDateFormatter *sTimestampFormat;
             if (! sTimestampFormat) {
@@ -235,7 +238,6 @@ static void _Logv(const MYLogDomain* domain, NSString *msg, va_list args) {
                 timestampTrailer = @"‖";
 
             NSString *separator = hasDomain ?@": " :@"";
-            msg = [[NSString alloc] initWithFormat: msg arguments: args];
             BOOL isWarning = (domain == &sWarningDomain);
             NSString* prefix = hasDomain ? @(domain->name) : @"";
             NSString *prefixColor = isWarning ?COLOR_WARNING :COLOR_PREFIX;
@@ -247,8 +249,9 @@ static void _Logv(const MYLogDomain* domain, NSString *msg, va_list args) {
             fputs([finalMsg UTF8String], stderr);
         } else {
             if (hasDomain)
-                msg = $sprintf(@"%s: %@", domain->name, msg);
-            NSLogv(msg,args);
+                NSLog(@"%s: %@", domain->name, msg);
+            else
+                NSLog(@"%@", msg);
         }
     }
 }
