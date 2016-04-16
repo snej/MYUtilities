@@ -8,6 +8,12 @@
 
 #import "Test.h"
 
+
+#if !__has_feature(objc_arc)
+#error This source file must be compiled with ARC
+#endif
+
+
 #if MY_ENABLE_TESTS
 
 #import "ExceptionUtils.h"

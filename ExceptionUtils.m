@@ -17,6 +17,11 @@
 #include <pthread.h>
 
 
+#if !__has_feature(objc_arc)
+#error This source file must be compiled with ARC
+#endif
+
+
 #ifndef Warn
 #define Warn NSLog
 #endif
@@ -111,7 +116,7 @@ static void report( NSException *x ) {
     [NSApp reportException: x];
 }
 
-- (id) init
+- (instancetype) init
 {
     self = [super init];
     if (self != nil) {

@@ -12,6 +12,11 @@
 #import <libkern/OSAtomic.h>
 
 
+#if !__has_feature(objc_arc)
+#error This source file must be compiled with ARC
+#endif
+
+
 @interface NSObject (MYBlockUtils)
 - (void) my_run_as_block;
 @end

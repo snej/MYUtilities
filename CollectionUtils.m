@@ -10,6 +10,11 @@
 #import "Test.h"
 
 
+#if !__has_feature(objc_arc)
+#error This source file must be compiled with ARC
+#endif
+
+
 NSDictionary* _dictof(const _dictpair pairs[], size_t count)
 {
     CAssert(count<10000);
@@ -319,12 +324,12 @@ void cfSetObj(void *var, CFTypeRef value) {
     NSEnumerator* _source;
     id (^_filter)(id obj) ;
 }
-- (id) initWithEnumerator: (NSEnumerator*)enumerator filter: (id (^)(id obj))filter;
+- (instancetype) initWithEnumerator: (NSEnumerator*)enumerator filter: (id (^)(id obj))filter;
 @end
 
 @implementation MYMappedEnumerator
 
-- (id) initWithEnumerator: (NSEnumerator*)enumerator filter: (id (^)(id obj))filter {
+- (instancetype) initWithEnumerator: (NSEnumerator*)enumerator filter: (id (^)(id obj))filter {
     self = [super init];
     if (self) {
         _source = [enumerator retain];

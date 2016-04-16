@@ -9,6 +9,11 @@
 #import "Test.h"
 
 
+#if !__has_feature(objc_arc)
+#error This source file must be compiled with ARC
+#endif
+
+
 void _AssertFailed(const void *selOrFn, const char *sourceFile, int sourceLine,
                     const char *condString, NSString *message, ... )
 {

@@ -15,6 +15,11 @@
 #include <termios.h>
 
 
+#if !__has_feature(objc_arc)
+#error This source file must be compiled with ARC
+#endif
+
+
 BOOL gMYWarnRaisesException;
 
 
