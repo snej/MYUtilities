@@ -136,12 +136,17 @@ static void report( NSException *x ) {
 - (void) _showExceptionAlert: (NSException*)x
 {
     NSString *stack = [x my_callStack] ?:@"";
-    NSInteger r = NSRunCriticalAlertPanel( @"Internal Error!",
-                                          @"Uncaught exception: %@\n%@\n\n%@\n\n"
-                                          "Please report this bug (you can copy & paste the text).",
-                                          @"Continue",@"Quit",nil,
-                                          [x name], [x reason], stack);
-    if( r == NSAlertAlternateReturn )
+
+    NSAlert* alert = [NSAlert new];
+    alert.alertStyle = NSCriticalAlertStyle;
+    alert.messageText =  @"Internal Error!";
+    alert.informativeText = $sprintf(@"Uncaught exception: %@\n%@\n\n%@\n\n"
+                                     "Please report this bug (you can copy & paste the text).",
+                                     [x name], [x reason], stack);
+    [alert addButtonWithTitle: @"Continue"];
+    [alert addButtonWithTitle: @"Quit"];
+
+    if( [alert runModal] == NSAlertSecondButtonReturn )
         exit(1);
     MYSetExceptionReporter(&report);
 }
