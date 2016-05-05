@@ -55,22 +55,8 @@ static void InitLogging() {
                 MYDefault_LogDomain.level = 1;
                 NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
                 for(NSString *key in [defaults dictionaryRepresentation]) {
-                    if ([key hasPrefix: @"Log"] && key.length > 3 && [defaults boolForKey: key]) {
-                        MYLogLevel level = MYLogLevelOn;
-                        NSString* trimmedKey = [key substringFromIndex: 3]; // trim 'Log'
-                        if ([trimmedKey hasSuffix: @"Debug"]) {
-                            trimmedKey = [trimmedKey substringToIndex: trimmedKey.length - 5];
-                            level = MYLogLevelDebug;
-#if !DEBUG
-                            Warn(@"Debug-level logging has no effect in release builds");
-#endif
-                        }
-                        while ([trimmedKey hasSuffix: @"Verbose"]) {
-                            trimmedKey = [trimmedKey substringToIndex: trimmedKey.length - 7];
-                            level++;
-                        }
-                        enableLogTo(trimmedKey, level);
-                    }
+                    if ([key hasPrefix: @"Log"] && key.length > 3 && [defaults boolForKey: key])
+                        enableLogTo([key substringFromIndex: 3], MYLogLevelOn);
                 }
 
                 static const char* kModeNames[] = {"NSLog", "file", "TTY", "color TTY", "color Xcode"};
@@ -121,6 +107,22 @@ BOOL _WillLogTo(NSString *domain, MYLogLevel atLevel) {
 #endif
 
 static MYLogLevel enableLogTo(NSString *domain, MYLogLevel level) {
+    MYLogLevel domainLevel = MYLogLevelOn;
+    if ([domain hasSuffix: @"Debug"]) {
+        domain = [domain substringToIndex: domain.length - 5];
+        domainLevel = MYLogLevelDebug;
+#if !DEBUG
+        Warn(@"Debug-level logging has no effect in release builds");
+#endif
+    }
+    while ([domain hasSuffix: @"Verbose"]) {
+        domain = [domain substringToIndex: domain.length - 7];
+        domainLevel++;
+    }
+
+    if (level == MYLogLevelOn && domainLevel > level)
+        level = domainLevel;
+
     MYLogDomain* d = findDomain(domain);
     if (!d) {
         Warn(@"EnableLogTo: There is no logging domain named '%@'. Available domains are: %@",
