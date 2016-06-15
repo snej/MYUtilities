@@ -72,6 +72,8 @@ NSError* MYMapError(NSError* error, NSDictionary* map);
 @property (readonly) BOOL my_isFileExistsError;
 @property (readonly) BOOL my_isFileNotFoundError;
 
+@property (readonly) NSURL* my_failingURL;
+
 /** A nice informative-but-compact description of an NSError, for logging. */
 @property (readonly) NSString* my_compactDescription;
 

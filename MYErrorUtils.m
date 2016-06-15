@@ -248,6 +248,17 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
                                                    || code == NSFileReadNoSuchFileError));
 }
 
+- (NSURL*) my_failingURL {
+    NSDictionary* userInfo = self.userInfo;
+    NSURL *url = userInfo[NSURLErrorFailingURLErrorKey] ?: userInfo[NSURLErrorKey];
+    if (!url) {
+        NSString* urlStr = userInfo[NSURLErrorFailingURLStringErrorKey];
+        if (urlStr)
+            url = [NSURL URLWithString: urlStr];
+    }
+    return url;
+}
+
 - (NSString*) my_compactDescription {
     NSDictionary* userInfo = self.userInfo;
     NSMutableString* s = [NSMutableString stringWithFormat: @"%@[%zd",
@@ -255,12 +266,7 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
     NSString* desc = self.my_nonDefaultLocalizedDescription;
     if (desc)
         [s appendFormat: @", \"%@\"", desc];
-    NSURL *url = userInfo[NSURLErrorFailingURLErrorKey] ?: userInfo[NSURLErrorKey];
-    if (!url) {
-        NSString* urlStr = userInfo[NSURLErrorFailingURLStringErrorKey];
-        if (urlStr)
-            url = [NSURL URLWithString: urlStr];
-    }
+    NSURL *url = self.my_failingURL;
     if (url)
         [s appendFormat: @", <%@>", url.my_sanitizedString];
     NSString* filePath = userInfo[NSFilePathErrorKey];
