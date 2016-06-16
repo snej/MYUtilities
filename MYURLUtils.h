@@ -32,7 +32,8 @@ static inline NSURL* $url(NSString* str) {
 /** Removes the username and password components, if any, from a URL. */
 @property (readonly) NSURL* my_URLByRemovingUser;
 
-/** Returns the URL's absoluteString with the password, if any, replaced with "*****". */
+/** Returns the URL's absoluteString with the password, if any, replaced with "*****".
+    Also, any query parameter whose name contains "token" will have its value changed to "*****". */
 @property (readonly) NSString* my_sanitizedString;
 
 /** Returns an NSURLProtectionSpace initialized based on the attributes of this URL
