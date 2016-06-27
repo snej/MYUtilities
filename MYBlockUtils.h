@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#include "CollectionUtils.h"
 
 
 /** Block-based delayed perform. Even works on NSOperationQueues that don't have runloops. */
@@ -29,7 +30,7 @@ void MYOnThreadInModes(NSThread* thread,
                        void (^block)());
 
 /** Spins the runloop in the given mode until the block returns YES. */
-BOOL MYWaitFor( NSString* mode, BOOL (^block)() );
+BOOL MYWaitFor( NSString* mode, MYNoEscape BOOL (^block)() );
 
 /** Returns a block that when called invokes `block` unless the time since the last call to
     `block` was less than `minInterval` seconds ago. */

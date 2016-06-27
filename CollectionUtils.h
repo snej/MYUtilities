@@ -63,6 +63,16 @@ void cfSetObj(void *var, CFTypeRef value);
 #define MYDeferDealloc(OBJ) [[(OBJ) retain] autorelease]
 #endif
 
+#if __has_attribute(noescape)
+#  ifdef NS_NOESCAPE
+#    define MYNoEscape NS_NOESCAPE
+#  else
+#    define MYNoEscape __attribute((noescape))
+#  endif
+#else
+#  define MYNoEscape
+#endif
+
 #define $true   ((NSNumber*)kCFBooleanTrue)
 #define $false  ((NSNumber*)kCFBooleanFalse)
 #define $null   [NSNull null]
@@ -74,21 +84,17 @@ void cfSetObj(void *var, CFTypeRef value);
 
 @interface NSArray (MYUtils)
 - (BOOL) my_containsObjectIdenticalTo: (id)object;
-#if NS_BLOCKS_AVAILABLE
-- (NSArray*) my_map: (id (^)(id obj))block;
-- (NSArray*) my_filter: (int (^)(id obj))block;
-#endif
+- (NSArray*) my_map: (MYNoEscape id (^)(id obj))block;
+- (NSArray*) my_filter: (MYNoEscape int (^)(id obj))block;
 @end
 
-#if NS_BLOCKS_AVAILABLE
 @interface NSMutableArray (MYUtils)
-- (void) my_removeMatching: (int (^)(id obj))block;
+- (void) my_removeMatching: (MYNoEscape int (^)(id obj))block;
 @end
-#endif
 
-#if NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
+#if MY_ENABLE_ENUMERATOR_MAP
 @interface NSEnumerator (MYUtils)
-- (NSEnumerator*) my_map: (id (^)(id obj))block;
+- (NSEnumerator*) my_map: (MYNoEscape id (^)(id obj))block;
 @end
 #endif
 
@@ -98,12 +104,10 @@ void cfSetObj(void *var, CFTypeRef value);
 + (NSSet*) my_differenceOfSet: (NSSet*)set1 andSet: (NSSet*)set2;
 @end
 
-#if NS_BLOCKS_AVAILABLE
 @interface NSDictionary (MYUtils)
-- (NSDictionary*) my_dictionaryByUpdatingValues: (id (^)(id key, id value))block;
+- (NSDictionary*) my_dictionaryByUpdatingValues: (MYNoEscape id (^)(id key, id value))block;
 
 @end
-#endif
 
 
 @interface NSData (MYUtils)

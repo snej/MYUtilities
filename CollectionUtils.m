@@ -318,7 +318,7 @@ void cfSetObj(void *var, CFTypeRef value) {
 @end
 
 
-#if NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
+#if MY_ENABLE_ENUMERATOR_MAP
 @interface MYMappedEnumerator : NSEnumerator
 {
     NSEnumerator* _source;
@@ -365,7 +365,7 @@ void cfSetObj(void *var, CFTypeRef value) {
 }
 
 @end
-#endif // NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
+#endif // MY_ENABLE_ENUMERATOR_MAP
 
 
 #if DEBUG
@@ -399,7 +399,7 @@ TestCase(CollectionUtils) {
                         nil];
     CAssertEqual(d,dd);
 
-#if NS_BLOCKS_AVAILABLE && MY_ENABLE_ENUMERATOR_MAP
+#if MY_ENABLE_ENUMERATOR_MAP
     NSEnumerator* source = [$array(@"teenage", @"mutant", @"ninja", @"turtles") objectEnumerator];
     NSEnumerator* mapped = [source my_map: ^id(NSString* str) {
         return [str hasPrefix: @"t"] ? [str uppercaseString] : nil;
