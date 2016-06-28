@@ -133,18 +133,27 @@
 - (NSString*) my_sanitizedString {
     if (!self.password && !self.query)
         return self.absoluteString;
-    NSURLComponents* comp = [[NSURLComponents alloc] initWithURL: self
+    return sanitize(self).string;
+}
+
+- (NSString*) my_sanitizedPath {
+    NSURLComponents* comp = sanitize(self);
+    return [comp.string substringFromIndex: comp.rangeOfPath.location];
+}
+
+static NSURLComponents* sanitize(NSURL* url) {
+    NSURLComponents* comp = [[NSURLComponents alloc] initWithURL: url
                                          resolvingAgainstBaseURL: YES];
     if (comp.password)
         comp.password = @"*****";
     comp.queryItems = [comp.queryItems my_map:^(NSURLQueryItem *item) {
         if ([item.name rangeOfString: @"token"].length > 0
-                || [item.name rangeOfString: @"code"].length > 0) {
+            || [item.name rangeOfString: @"code"].length > 0) {
             item = [NSURLQueryItem queryItemWithName: item.name value: @"*****"];
         }
         return item;
     }];
-    return comp.URL.absoluteString;
+    return comp;
 }
 
 

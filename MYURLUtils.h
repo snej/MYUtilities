@@ -36,6 +36,9 @@ static inline NSURL* $url(NSString* str) {
     Also, any query parameter whose name contains "token" will have its value changed to "*****". */
 @property (readonly) NSString* my_sanitizedString;
 
+/** Similar to my_sanitizedString, but returns only the URL's path (including query and fragment). */
+@property (readonly) NSString* my_sanitizedPath;
+
 /** Returns an NSURLProtectionSpace initialized based on the attributes of this URL
     (host, effective port, scheme) and the given realm and authentication method. */
 - (NSURLProtectionSpace*) my_protectionSpaceWithRealm: (NSString*)realm
