@@ -130,15 +130,29 @@
 }
 
 
+static NSString* compsToString(NSURLComponents* comps) {
+    if ([comps respondsToSelector: @selector(string)])     // iOS 8, macOS 10.10
+        return comps.string;
+    else
+        return comps.URL.absoluteString;
+}
+
+
 - (NSString*) my_sanitizedString {
     if (!self.password && !self.query)
         return self.absoluteString;
-    return sanitize(self).string;
+    return compsToString(sanitize(self));
 }
 
 - (NSString*) my_sanitizedPath {
     NSURLComponents* comp = sanitize(self);
-    return [comp.string substringFromIndex: comp.rangeOfPath.location];
+    if ([comp respondsToSelector: @selector(rangeOfPath)])     // iOS 9, macOS 10.11
+        return [compsToString(comp) substringFromIndex: comp.rangeOfPath.location];
+    else {
+        comp.scheme = comp.host = comp.user = comp.password = nil;
+        comp.port = nil;
+        return compsToString(comp);
+    }
 }
 
 static NSURLComponents* sanitize(NSURL* url) {
@@ -146,13 +160,36 @@ static NSURLComponents* sanitize(NSURL* url) {
                                          resolvingAgainstBaseURL: YES];
     if (comp.password)
         comp.password = @"*****";
-    comp.queryItems = [comp.queryItems my_map:^(NSURLQueryItem *item) {
-        if ([item.name rangeOfString: @"token"].length > 0
-            || [item.name rangeOfString: @"code"].length > 0) {
-            item = [NSURLQueryItem queryItemWithName: item.name value: @"*****"];
+    if (comp.query) {
+        if ([comp respondsToSelector:@selector(queryItems)]) {     // iOS 8, macOS 10.10
+            comp.queryItems = [comp.queryItems my_map:^(NSURLQueryItem *item) {
+                if ([item.name rangeOfString: @"token"].length > 0
+                    || [item.name rangeOfString: @"code"].length > 0) {
+                    item = [NSURLQueryItem queryItemWithName: item.name value: @"*****"];
+                }
+                return item;
+            }];
+        } else {
+            NSMutableString* newQuery = [NSMutableString new];
+            NSString* query = comp.query;
+            for (NSString* item in [query componentsSeparatedByString: @"&"]) {
+                if (newQuery.length > 0)
+                    [newQuery appendString: @"&"];
+                NSRange e = [item rangeOfString: @"="];
+                if (e.length > 0 && NSMaxRange(e) < item.length) {
+                    NSString* key = [item substringToIndex: e.location];
+                    if ([key rangeOfString: @"token"].length > 0
+                            || [key rangeOfString: @"code"].length > 0) {
+                        [newQuery appendString: key];
+                        [newQuery appendString: @"=*****"];
+                        continue;
+                    }
+                }
+                [newQuery appendString: item];
+            }
+            comp.query = newQuery;
         }
-        return item;
-    }];
+    }
     return comp;
 }
 
