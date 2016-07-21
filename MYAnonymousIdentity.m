@@ -143,7 +143,7 @@ static NSData* generateAnonymousCert(SecKeyRef publicKey, SecKeyRef privateKey,
     uint8_t* buf = data.mutableBytes;
 
     // Write the serial number:
-    SecRandomCopyBytes(kSecRandomDefault, kSerialLength, &buf[kSerialOffset]);
+    (void)SecRandomCopyBytes(kSecRandomDefault, kSerialLength, &buf[kSerialOffset]);
     buf[kSerialOffset] &= 0x7F; // non-negative
 
     // Write the issue and expiration dates:
