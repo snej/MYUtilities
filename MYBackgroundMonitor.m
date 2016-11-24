@@ -26,16 +26,36 @@
     self = [super init];
     if (self) {
         _bgTask = UIBackgroundTaskInvalid;
-        [[NSNotificationCenter defaultCenter] addObserver: self
-                                                 selector: @selector(appBackgrounding:)
-                                                 name: UIApplicationDidEnterBackgroundNotification
-                                               object: nil];
-        [[NSNotificationCenter defaultCenter] addObserver: self
-                                                 selector: @selector(appForegrounding:)
-                                                 name: UIApplicationWillEnterForegroundNotification
-                                               object: nil];
     }
     return self;
+}
+
+
+- (void) start {
+    [[NSNotificationCenter defaultCenter] addObserver: self
+                                             selector: @selector(appBackgrounding:)
+                                                 name: UIApplicationDidEnterBackgroundNotification
+                                               object: nil];
+    [[NSNotificationCenter defaultCenter] addObserver: self
+                                             selector: @selector(appForegrounding:)
+                                                 name: UIApplicationWillEnterForegroundNotification
+                                               object: nil];
+    // Already in the background? Better start a background session now:
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (UIApplication.sharedApplication.applicationState == UIApplicationStateBackground)
+            [self appBackgrounding: nil];
+    });
+}
+
+
+- (void) stop {
+    [[NSNotificationCenter defaultCenter] removeObserver: self];
+    [self endBackgroundTask];
+}
+
+
+- (void) dealloc {
+    [self stop];
 }
 
 
@@ -50,28 +70,20 @@
 }
 
 
-- (void) stop {
-    [self endBackgroundTask];
-    [[NSNotificationCenter defaultCenter] removeObserver: self];
-}
-
-
-- (void) dealloc {
-    [self stop];
-}
-
-
 - (BOOL) beginBackgroundTaskNamed: (NSString*)name {
     @synchronized(self) {
-        Assert(_bgTask == UIBackgroundTaskInvalid, @"Background task already running");
-        _bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithName: name
-                                                               expirationHandler: ^{
-            // Process ran out of background time before endBackgroundTask was called.
-            // NOTE: Called on the main thread
-            if ([self endBackgroundTask])
-                if (_onBackgroundTaskExpired)
-                    _onBackgroundTaskExpired();
-        }];
+        if (_bgTask == UIBackgroundTaskInvalid) {
+            _bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithName: name
+                                                                   expirationHandler: ^{
+                // Process ran out of background time before endBackgroundTask was called.
+                // NOTE: Called on the main thread
+                if (_bgTask != UIBackgroundTaskInvalid) {
+                    if (_onBackgroundTaskExpired)
+                        _onBackgroundTaskExpired();
+                    [self endBackgroundTask];
+                }
+            }];
+        }
         return (_bgTask != UIBackgroundTaskInvalid);
     }
 }

@@ -13,16 +13,20 @@
     "background task" to request more time to finish an activity. */
 @interface MYBackgroundMonitor : NSObject
 
-- (instancetype) init;
+/** Starts the monitor. */
+- (void) start;
 
 /** Explicitly stops the monitor. (So does deallocing it.) */
 - (void) stop;
 
 /** Starts a background task. Should be called from the onAppBackgrounding block.
-    Only one background task can be active at a time. */
+    Does nothing if the background task is already active.
+    Returns YES on success, NO if running in the background is not possible.
+    NOTE: Should be called on the main thread. */
 - (BOOL) beginBackgroundTaskNamed: (NSString*)name;
 
 /** Tells the OS that the current background task is done.
+    NOTE: Should be called on the main thread.
     @return  YES if there was a background task, NO if none was running. */
 - (BOOL) endBackgroundTask;
 
@@ -31,14 +35,17 @@
 
 /** This block will be called when the app goes into the background.
     The app will soon stop being scheduled for CPU time unless the block starts a background task
-    by calling -beginBackgroundTaskNamed:. */
+    by calling -beginBackgroundTaskNamed:. 
+    NOTE: Called on the main thread. */
 @property (strong) void (^onAppBackgrounding)();
 
-/** Called when the app returns to the foreground. */
+/** Called when the app returns to the foreground.
+    NOTE: Called on the main thread. */
 @property (strong) void (^onAppForegrounding)();
 
 /** Called if the OS loses its patience before -endBackgroundTask is called.
-    The task is implicitly ended, and the app will soon stop being scheduled for CPU time. */
+    The task is implicitly ended, and the app will soon stop being scheduled for CPU time.
+    NOTE: Called on the main thread. */
 @property (strong) void (^onBackgroundTaskExpired)();
 
 @end
