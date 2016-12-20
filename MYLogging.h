@@ -59,7 +59,7 @@ typedef struct MYLogDomain {
 #ifndef MY_DISABLE_LOGGING
 
     #define DefineLogDomain(DOMAIN) \
-        MYLogDomain DOMAIN##_LogDomain = {255, #DOMAIN}; \
+        MYLogDomain DOMAIN##_LogDomain = {(MYLogLevel)255, #DOMAIN}; \
         __attribute__((constructor)) static void register_##DOMAIN##_LogDomain() \
             { DOMAIN##_LogDomain.next = gMYLogDomainList; gMYLogDomainList = &DOMAIN##_LogDomain; }
 
