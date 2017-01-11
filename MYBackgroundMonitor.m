@@ -32,6 +32,7 @@
 
 
 - (void) start {
+#if NS_EXTENSION_UNAVAILABLE_IOS
     [[NSNotificationCenter defaultCenter] addObserver: self
                                              selector: @selector(appBackgrounding:)
                                                  name: UIApplicationDidEnterBackgroundNotification
@@ -45,12 +46,15 @@
         if (UIApplication.sharedApplication.applicationState == UIApplicationStateBackground)
             [self appBackgrounding: nil];
     });
+#endif
 }
 
 
 - (void) stop {
+#if NS_EXTENSION_UNAVAILABLE_IOS
     [[NSNotificationCenter defaultCenter] removeObserver: self];
     [self endBackgroundTask];
+#endif
 }
 
 
@@ -60,6 +64,7 @@
 
 
 - (BOOL) endBackgroundTask {
+#if NS_EXTENSION_UNAVAILABLE_IOS
     @synchronized(self) {
         if (_bgTask == UIBackgroundTaskInvalid)
             return NO;
@@ -67,10 +72,14 @@
         _bgTask = UIBackgroundTaskInvalid;
         return YES;
     }
+#else
+    return NO;
+#endif
 }
 
 
 - (BOOL) beginBackgroundTaskNamed: (NSString*)name {
+#if NS_EXTENSION_UNAVAILABLE_IOS
     @synchronized(self) {
         if (_bgTask == UIBackgroundTaskInvalid) {
             _bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithName: name
@@ -86,6 +95,9 @@
         }
         return (_bgTask != UIBackgroundTaskInvalid);
     }
+#else
+    return NO;
+#endif
 }
 
 
