@@ -303,11 +303,8 @@ void MYWarn(const char *where, int line, NSString *msg, ...) {
 #endif
 
     if (gMYWarnRaisesException) {
-        va_list args;
-        va_start(args,msg);
         [NSException raise: NSInternalInconsistencyException
                     format: @"Warn() was called from %s:%d: %@", where, line, formatted];
-        va_end(args);
     }
 }
 
