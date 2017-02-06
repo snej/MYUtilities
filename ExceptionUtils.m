@@ -12,18 +12,14 @@
 #import "Logging.h"
 #import "Test.h"
 
-#include <sys/sysctl.h>
-#include <unistd.h>
-#include <pthread.h>
-
 
 #if !__has_feature(objc_arc)
 #error This source file must be compiled with ARC
 #endif
 
 
-#ifndef Warn
-#define Warn NSLog
+#ifndef MYWarn
+#define MYWarn NSLog
 #endif
 
 
@@ -40,7 +36,7 @@ void MYReportException( NSException *x, NSString *where, ... )
     va_start(args,where);
     where = [[NSString alloc] initWithFormat: where arguments: args];
     va_end(args);
-    Warn(@"Exception caught in %@:\n\t%@\n%@",where,x,x.my_callStack);
+    MYWarn(@"Exception caught in %@:\n\t%@\n%@",where,x,x.my_callStack);
     if( sExceptionReporter )
         sExceptionReporter(x);
 }
@@ -157,34 +153,63 @@ static void report( NSException *x ) {
 
 
 
-BOOL IsGDBAttached( void )
+
+#if DEBUG
+
+#include <assert.h>
+#include <stdbool.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/sysctl.h>
+#include <pthread.h>
+
+
+// Returns true if the current process is being debugged (either
+// running under the debugger or has a debugger attached post facto).
+// Copied from <https://developer.apple.com/library/content/qa/qa1361/_index.html>
+bool MYIsDebuggerAttached(void)
 {
-#ifdef GNUSTEP
-    return NO;
-#else
-    // From: <http://lists.apple.com/archives/Xcode-users/2004/Feb/msg00241.html>
-    int mib[4];
-    size_t bufSize = 0;
-    struct kinfo_proc kp;
-    
+    // Important: Because the definition of the kinfo_proc structure (in <sys/sysctl.h>) is
+    // conditionalized by __APPLE_API_UNSTABLE, you should restrict use of the above code to the
+    // debug build of your program.
+
+    int                 junk;
+    int                 mib[4];
+    struct kinfo_proc   info;
+    size_t              size;
+
+    // Initialize the flags so that, if sysctl fails for some bizarre
+    // reason, we get a predictable result.
+
+    info.kp_proc.p_flag = 0;
+
+    // Initialize mib, which tells sysctl the info we want, in this case
+    // we're looking for information about a specific process ID.
+
     mib[0] = CTL_KERN;
     mib[1] = KERN_PROC;
     mib[2] = KERN_PROC_PID;
     mib[3] = getpid();
-    
-    bufSize = sizeof (kp);
-    if (sysctl(mib, 4, &kp, &bufSize, NULL, 0) < 0) {
-        Warn(@"Error %i calling sysctl",errno);
-        return NO;
-    }
-    return (kp.kp_proc.p_flag & P_TRACED) != 0;
-#endif
+
+    // Call sysctl.
+
+    size = sizeof(info);
+    junk = sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &size, NULL, 0);
+    assert(junk == 0);
+
+    // We're being debugged if the P_TRACED flag is set.
+
+    return ( (info.kp_proc.p_flag & P_TRACED) != 0 );
 }
 
+#endif
 
-void MYBreakpoint() {
+
+#if !TARGET_CPU_X86_64 && !TARGET_CPU_X86
+void _MYBreakpoint() {
     pthread_kill(pthread_self(), SIGINT);
 }
+#endif
 
 
 

@@ -43,5 +43,20 @@ void MYSetExceptionReporter( void (*reporter)(NSException*) );
 @end
 
 
-BOOL IsGDBAttached( void );
-void MYBreakpoint( void );
+#if DEBUG
+    /** Returns true if the current process is being debugged -- either launched from the debugger,
+        or has had a debugger attached to it. Not available in a non-debug build (always returns
+        false) because the check it performs isn't ABI-stable. */
+    bool MYIsDebuggerAttached(void);
+#else
+    #define MYIsDebuggerAttached()  false
+#endif
+
+#if TARGET_CPU_X86_64 || TARGET_CPU_X86
+/** Pauses the debugger at the call to this macro, as though there were a breakpoint on it.
+    Has no effect if no debugger is attached, or in a non-debug build. */
+#define MYBreakpoint() ({ if (MYIsDebuggerAttached()) {__asm__("int $3\n" : : );} })
+#else
+void _MYBreakpoint(void);
+#define MYBreakpoint() ({ if (MYIsDebuggerAttached()) {_MYBreakpoint();} })
+#endif
