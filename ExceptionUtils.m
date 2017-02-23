@@ -9,7 +9,7 @@
 
 #import "ExceptionUtils.h"
 
-#import "Logging.h"
+#import "MYLogging.h"
 #import "Test.h"
 
 
