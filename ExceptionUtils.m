@@ -12,6 +12,7 @@
 #import "MYLogging.h"
 #import "Test.h"
 
+#include <pthread.h>
 
 #if !__has_feature(objc_arc)
 #error This source file must be compiled with ARC
