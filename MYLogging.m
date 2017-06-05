@@ -41,7 +41,7 @@ BOOL (^MYLoggingCallback)(NSString* domain, NSString* message) = nil;
 
 
 static MYLogLevel enableLogTo(NSString *domain, MYLogLevel level);
-static MYLoggingTo loggingMode();
+static MYLoggingTo loggingMode(void);
 
 
 static void InitLogging() {
