@@ -7,7 +7,7 @@
 
 #import "MYAnonymousIdentity.h"
 #import "CollectionUtils.h"
-#import "Logging.h"
+#import "MYLogging.h"
 #import "Test.h"
 #import <CommonCrypto/CommonDigest.h>
 #import <Security/Security.h>
@@ -278,8 +278,7 @@ static SecCertificateRef addCertToKeychain(NSData* certData, NSString* label,
 
 
 // Looks up an identity (cert + private key) by the cert's label.
-static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInterval) {
-    SecIdentityRef identity;
+SecIdentityRef MYFindIdentity(NSString* label) {
 #if TARGET_OS_IPHONE
     NSDictionary* query = @{(__bridge id)kSecClass:     (__bridge id)kSecClassIdentity,
                             (__bridge id)kSecAttrLabel: label,
@@ -290,11 +289,15 @@ static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInt
         AssertEq(err, errSecItemNotFound); // other err indicates query dict is malformed
         return NULL;
     }
-    identity = (SecIdentityRef)ref;
+    return (SecIdentityRef)ref;
 #else
-    identity = SecIdentityCopyPreferred((__bridge CFStringRef)label, NULL, NULL);
+    return SecIdentityCopyPreferred((__bridge CFStringRef)label, NULL, NULL);
 #endif
+}
 
+
+static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInterval) {
+    SecIdentityRef identity = MYFindIdentity(label);
     if (identity) {
         // Check that the cert hasn't expired yet:
         CFAutorelease(identity);

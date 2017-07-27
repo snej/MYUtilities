@@ -23,6 +23,9 @@ SecIdentityRef MYGetOrCreateAnonymousIdentity(NSString* label,
                                               NSTimeInterval expirationInterval,
                                               NSError** outError);
 
+/** Finds an identity (anonymous or not) in the keychain with the given label. */
+SecIdentityRef MYFindIdentity(NSString* label);
+
 /** Removes an identity created by MYGetOrCreateAnonymousIdentity from the keychain.
     @param label  Label given to the identity when it was created.
     @return  YES if an identity was removed, NO if not. */
