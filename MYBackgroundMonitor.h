@@ -31,21 +31,21 @@
 - (BOOL) endBackgroundTask;
 
 /** YES if there is currently a background task. */
-@property (readonly) BOOL hasBackgroundTask;
+@property (atomic, readonly) BOOL hasBackgroundTask;
 
 /** This block will be called when the app goes into the background.
     The app will soon stop being scheduled for CPU time unless the block starts a background task
     by calling -beginBackgroundTaskNamed:. 
     NOTE: Called on the main thread. */
-@property (strong) void (^onAppBackgrounding)();
+@property (atomic, strong) void (^onAppBackgrounding)();
 
 /** Called when the app returns to the foreground.
     NOTE: Called on the main thread. */
-@property (strong) void (^onAppForegrounding)();
+@property (atomic, strong) void (^onAppForegrounding)();
 
 /** Called if the OS loses its patience before -endBackgroundTask is called.
     The task is implicitly ended, and the app will soon stop being scheduled for CPU time.
     NOTE: Called on the main thread. */
-@property (strong) void (^onBackgroundTaskExpired)();
+@property (atomic, strong) void (^onBackgroundTaskExpired)();
 
 @end
