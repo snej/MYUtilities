@@ -55,7 +55,7 @@ static UIApplication* sharedApplication() {
                                                object: nil];
     // Already in the background? Better start a background session now:
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (UIApplication.sharedApplication.applicationState == UIApplicationStateBackground)
+        if (sharedApplication().applicationState == UIApplicationStateBackground)
             [self appBackgrounding: nil];
     });
 }
@@ -82,7 +82,7 @@ static UIApplication* sharedApplication() {
     @synchronized(self) {
         if (_bgTask == UIBackgroundTaskInvalid)
             return NO;
-        [[UIApplication sharedApplication] endBackgroundTask: _bgTask];
+        [sharedApplication() endBackgroundTask: _bgTask];
         _bgTask = UIBackgroundTaskInvalid;
         return YES;
     }
@@ -95,8 +95,8 @@ static UIApplication* sharedApplication() {
     
     @synchronized(self) {
         if (_bgTask == UIBackgroundTaskInvalid) {
-            _bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithName: name
-                                                                   expirationHandler: ^{
+            _bgTask = [sharedApplication() beginBackgroundTaskWithName: name
+                                                     expirationHandler: ^{
                 // Process ran out of background time before endBackgroundTask was called.
                 // NOTE: Called on the main thread
                 if (_bgTask != UIBackgroundTaskInvalid) {
