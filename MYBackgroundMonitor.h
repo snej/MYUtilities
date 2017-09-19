@@ -37,15 +37,15 @@
     The app will soon stop being scheduled for CPU time unless the block starts a background task
     by calling -beginBackgroundTaskNamed:. 
     NOTE: Called on the main thread. */
-@property (atomic, strong) void (^onAppBackgrounding)();
+@property (atomic, strong) void (^onAppBackgrounding)(void);
 
 /** Called when the app returns to the foreground.
     NOTE: Called on the main thread. */
-@property (atomic, strong) void (^onAppForegrounding)();
+@property (atomic, strong) void (^onAppForegrounding)(void);
 
 /** Called if the OS loses its patience before -endBackgroundTask is called.
     The task is implicitly ended, and the app will soon stop being scheduled for CPU time.
     NOTE: Called on the main thread. */
-@property (atomic, strong) void (^onBackgroundTaskExpired)();
+@property (atomic, strong) void (^onBackgroundTaskExpired)(void);
 
 @end
