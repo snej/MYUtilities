@@ -261,8 +261,8 @@ NSError* MYMapError(NSError* error, NSDictionary* map) {
 
 - (NSString*) my_compactDescription {
     NSDictionary* userInfo = self.userInfo;
-    NSMutableString* s = [NSMutableString stringWithFormat: @"%@[%zd",
-                          MYShortErrorDomainName(self.domain), self.code];
+    NSMutableString* s = [NSMutableString stringWithFormat: @"%@[%ld",
+                          MYShortErrorDomainName(self.domain), (long)self.code];
     NSString* desc = self.my_nonDefaultLocalizedDescription;
     if (desc)
         [s appendFormat: @", \"%@\"", desc];
