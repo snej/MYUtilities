@@ -6,6 +6,8 @@
 //  Copyright © 2015 Jens Alfke. All rights reserved.
 //
 
+#if TARGET_OS_IPHONE
+
 #import "MYBackgroundMonitor.h"
 #import <UIKit/UIKit.h>
 #import <dispatch/dispatch.h>
@@ -131,3 +133,5 @@ static UIApplication* sharedApplication() {
 
 
 @end
+
+#endif // TARGET_OS_IPHONE
