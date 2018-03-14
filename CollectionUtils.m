@@ -15,6 +15,9 @@
 #endif
 
 
+#define UU __unsafe_unretained
+
+
 NSDictionary* _dictof(const _dictpair pairs[], size_t count)
 {
     CAssert(count<10000);
@@ -49,7 +52,7 @@ NSMutableDictionary* _mdictof(const _dictpair pairs[], size_t count)
 }
 
 
-BOOL $equal(id obj1, id obj2)      // Like -isEqual: but works even if either/both are nil
+BOOL $equal(UU id obj1, UU id obj2)      // Like -isEqual: but works even if either/both are nil
 {
     if( obj1 )
         return obj2 && [obj1 isEqual: obj2];
@@ -85,7 +88,7 @@ id _box(const void *value, const char *encoding)
 }
 
 
-id _cast( Class requiredClass, id object )
+id _cast( UU Class requiredClass, UU id object )
 {
     if( object && ! [object isKindOfClass: requiredClass] )
         [NSException raise: NSInvalidArgumentException format: @"%@ required, but got %@ %p",
@@ -93,7 +96,7 @@ id _cast( Class requiredClass, id object )
     return object;
 }
 
-id _castNotNil( Class requiredClass, id object )
+id _castNotNil( UU Class requiredClass, UU id object )
 {
     if( ! [object isKindOfClass: requiredClass] )
         [NSException raise: NSInvalidArgumentException format: @"%@ required, but got %@ %p",
@@ -101,28 +104,28 @@ id _castNotNil( Class requiredClass, id object )
     return object;
 }
 
-id _castIf( Class requiredClass, id object )
+id _castIf( UU Class requiredClass, UU id object )
 {
     if( object && ! [object isKindOfClass: requiredClass] )
         object = nil;
     return object;
 }
 
-id _castIfProto( Protocol* requiredProtocol, id object )
+id _castIfProto( UU Protocol* requiredProtocol, UU id object )
 {
     if( object && ! [object conformsToProtocol: requiredProtocol] )
         object = nil;
     return object;
 }
 
-NSArray* _castArrayOf(Class itemClass, NSArray *a)
+NSArray* _castArrayOf(UU Class itemClass, UU NSArray *a)
 {
     for(id item in $cast(NSArray,a) )
         _cast(itemClass,item);
     return a;
 }
 
-NSArray* _castIfArrayOf(Class itemClass, NSArray *a)
+NSArray* _castIfArrayOf(UU Class itemClass, UU NSArray *a)
 {
     a = $castIf(NSArray,a);
     for(id item in a )
@@ -161,7 +164,7 @@ void cfSetObj(void *var, CFTypeRef value) {
 
 @implementation NSArray (MYUtils)
 
-- (BOOL) my_containsObjectIdenticalTo: (id)object
+- (BOOL) my_containsObjectIdenticalTo: (UU id)object
 {
     return [self indexOfObjectIdenticalTo: object] != NSNotFound;
 }
