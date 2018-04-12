@@ -7,6 +7,7 @@
 
 #import "MYAnonymousIdentity.h"
 #import "CollectionUtils.h"
+#import "MYErrorUtils.h"
 #import "MYLogging.h"
 #import "Test.h"
 #import <CommonCrypto/CommonDigest.h>
@@ -29,7 +30,7 @@ static uint8_t const kCertTemplate[499];
 #define kPublicKeyLength    270u
 #define kCSROffset            0
 #define kCSRLength          494u
-#define kSignatureLength    256u
+#define kSignatureLength    256u        // must be kKeySizeInBits / 8
 
 
 static BOOL checkErr(OSStatus err, NSError** outError);
@@ -143,7 +144,11 @@ static NSData* generateAnonymousCert(SecKeyRef publicKey, SecKeyRef privateKey,
     uint8_t* buf = data.mutableBytes;
 
     // Write the serial number:
-    (void)SecRandomCopyBytes(kSecRandomDefault, kSerialLength, &buf[kSerialOffset]);
+    int status = SecRandomCopyBytes(kSecRandomDefault, kSerialLength, &buf[kSerialOffset]);
+    if (status != 0) {
+        MYReturnError(outError, status, @"SecRandomCopyBytes", @"SecRandomCopyBytes failed");
+        return nil;
+    }
     buf[kSerialOffset] &= 0x7F; // non-negative
 
     // Write the issue and expiration dates:
@@ -317,10 +322,18 @@ static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInt
 }
 
 
-NSData* MYGetCertificateDigest(SecCertificateRef cert) {
+NSData* MYGetCertificateDigestSHA1(SecCertificateRef cert) {
     CFDataRef data = SecCertificateCopyData(cert);
     uint8_t digest[CC_SHA1_DIGEST_LENGTH];
     CC_SHA1(CFDataGetBytePtr(data), (CC_LONG)CFDataGetLength(data), digest);
+    CFRelease(data);
+    return [NSData dataWithBytes: digest length: sizeof(digest)];
+}
+
+NSData* MYGetCertificateDigestSHA256(SecCertificateRef cert) {
+    CFDataRef data = SecCertificateCopyData(cert);
+    uint8_t digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(CFDataGetBytePtr(data), (CC_LONG)CFDataGetLength(data), digest);
     CFRelease(data);
     return [NSData dataWithBytes: digest length: sizeof(digest)];
 }
@@ -437,7 +450,7 @@ TestCase(GenerateAnonymousCert) {
     Assert(ident, @"Couldn't find identity");
 #endif
 
-    NSData* digest = MYGetCertificateDigest(certRef);
+    NSData* digest = MYGetCertificateDigestSHA256(certRef);
     Log(@"Cert digest = %@", digest);
     Assert(digest);
 }
