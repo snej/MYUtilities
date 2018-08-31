@@ -294,7 +294,8 @@ SecIdentityRef MYFindIdentity(NSString* label) {
     CFTypeRef ref = NULL;
     OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, &ref);
     if (err) {
-        AssertEq(err, errSecItemNotFound); // other err indicates query dict is malformed
+        if (err != errSecItemNotFound)
+            Warn(@"Unexpected error %d found when retrieving SSL identity labeled \"%@\"", (int)err, label);
         return NULL;
     }
     return (SecIdentityRef)ref;
