@@ -41,13 +41,14 @@ static BOOL checkCertValid(SecCertificateRef cert, NSTimeInterval expirationInte
 static BOOL generateRSAKeyPair(int sizeInBits,
                                BOOL permanent,
                                NSString* label,
+                               CFStringRef accessible,
                                SecKeyRef *publicKey,
                                SecKeyRef *privateKey,
                                NSError** outError);
 static NSData* getPublicKeyData(SecKeyRef publicKey);
 static NSData* signData(SecKeyRef privateKey, NSData* inputData);
 static SecCertificateRef addCertToKeychain(NSData* certData, NSString* label,
-                                           NSError** outError);
+                                           CFStringRef accessible, NSError** outError);
 static SecIdentityRef findIdentity(NSString* label, NSTimeInterval expirationInterval);
 
 #if TARGET_OS_IPHONE
@@ -57,6 +58,7 @@ static void removePublicKey(SecKeyRef publicKey);
 
 SecIdentityRef MYGetOrCreateAnonymousIdentity(NSString* label,
                                               NSTimeInterval expirationInterval,
+                                              CFStringRef accessible,
                                               NSError** outError)
 {
     NSCParameterAssert(label);
@@ -64,12 +66,12 @@ SecIdentityRef MYGetOrCreateAnonymousIdentity(NSString* label,
     if (!ident) {
         Log(@"Generating new anonymous self-signed SSL identity labeled \"%@\"...", label);
         SecKeyRef publicKey, privateKey;
-        if (!generateRSAKeyPair(kKeySizeInBits, YES, label, &publicKey, &privateKey, outError))
+        if (!generateRSAKeyPair(kKeySizeInBits, YES, label, accessible, &publicKey, &privateKey, outError))
             return NULL;
         NSData* certData = generateAnonymousCert(publicKey,privateKey, expirationInterval,outError);
         if (!certData)
             return NULL;
-        SecCertificateRef certRef = addCertToKeychain(certData, label, outError);
+        SecCertificateRef certRef = addCertToKeychain(certData, label, accessible, outError);
         if (!certRef)
             return NULL;
 #if TARGET_OS_IPHONE
@@ -107,13 +109,16 @@ static BOOL checkErr(OSStatus err, NSError** outError) {
 static BOOL generateRSAKeyPair(int sizeInBits,
                                BOOL permanent,
                                NSString* label,
+                               CFStringRef accessible,
                                SecKeyRef *publicKey,
                                SecKeyRef *privateKey,
                                NSError** outError)
 {
 #if TARGET_OS_IPHONE
-    NSDictionary *keyAttrs = @{(__bridge id)kSecAttrIsPermanent: @(permanent),
-                               (__bridge id)kSecAttrLabel: label};
+    NSMutableDictionary *keyAttrs = $mdict({(__bridge id)kSecAttrIsPermanent, @(permanent)},
+                                           {(__bridge id)kSecAttrLabel, label});
+    if (accessible != NULL)
+        keyAttrs[(__bridge id)kSecAttrAccessible] = (__bridge id)accessible;
 #endif
     NSDictionary *pairAttrs = @{(__bridge id)kSecAttrKeyType:       (__bridge id)kSecAttrKeyTypeRSA,
                                 (__bridge id)kSecAttrKeySizeInBits: @(sizeInBits),
@@ -246,19 +251,22 @@ static NSData* signData(SecKeyRef privateKey, NSData* inputData) {
 
 // Adds a certificate to the keychain, tagged with a label for future lookup.
 static SecCertificateRef addCertToKeychain(NSData* certData, NSString* label,
-                                           NSError** outError) {
+                                           CFStringRef accessible, NSError** outError) {
     SecCertificateRef certRef = SecCertificateCreateWithData(NULL, (__bridge CFDataRef)certData);
     if (!certRef) {
         checkErr(errSecIO, outError);
         return NULL;
     }
     CFAutorelease(certRef);
-    NSDictionary* attrs = $dict({(__bridge id)kSecClass,     (__bridge id)kSecClassCertificate},
-                                {(__bridge id)kSecValueRef,  (__bridge id)certRef},
+    NSMutableDictionary* attrs = $mdict({(__bridge id)kSecClass,     (__bridge id)kSecClassCertificate},
+                                        {(__bridge id)kSecValueRef,  (__bridge id)certRef},
 #if TARGET_OS_IPHONE
-                                {(__bridge id)kSecAttrLabel, label}
+                                        {(__bridge id)kSecAttrLabel, label}
 #endif
-                                );
+                                        );
+    if (accessible != NULL)
+        attrs[(__bridge id)kSecAttrAccessible] = (__bridge id)accessible;
+    
     CFTypeRef result;
     OSStatus err = SecItemAdd((__bridge CFDictionaryRef)attrs, &result);
 
@@ -291,7 +299,8 @@ SecIdentityRef MYFindIdentity(NSString* label) {
     CFTypeRef ref = NULL;
     OSStatus err = SecItemCopyMatching((__bridge CFDictionaryRef)query, &ref);
     if (err) {
-        AssertEq(err, errSecItemNotFound); // other err indicates query dict is malformed
+        if (err != errSecItemNotFound)
+            Warn(@"Unexpected error %d found when retrieving SSL identity labeled \"%@\"", (int)err, label);
         return NULL;
     }
     return (SecIdentityRef)ref;
@@ -422,14 +431,14 @@ TestCase(GenerateAnonymousCert) {
     static NSString* const kLabel = @"MYAnonymousIdentity unit test";
     SecKeyRef publicKey, privateKey;
     NSError* error;
-    Assert(generateRSAKeyPair(kKeySizeInBits, TARGET_OS_IPHONE, kLabel,
+    Assert(generateRSAKeyPair(kKeySizeInBits, TARGET_OS_IPHONE, kLabel, NULL,
                               &publicKey, &privateKey, &error));
     NSData* certData = generateAnonymousCert(publicKey, privateKey, 60*60*24, &error);
     Assert(certData);
 
     SecCertificateRef certRef;
 #if TARGET_OS_IPHONE
-    certRef = addCertToKeychain(certData, kLabel, NULL);
+    certRef = addCertToKeychain(certData, kLabel, NULL, NULL);
 #else
     certRef = SecCertificateCreateWithData(NULL, (__bridge CFDataRef)certData);
     CFAutorelease(certRef);
