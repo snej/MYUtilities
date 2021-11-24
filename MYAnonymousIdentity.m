@@ -125,9 +125,22 @@ static BOOL generateRSAKeyPair(int sizeInBits,
                                 (__bridge id)kSecAttrIsPermanent:   @(permanent)
 #endif
                                 };
-    if (!checkErr(SecKeyGeneratePair((__bridge CFDictionaryRef)pairAttrs, publicKey, privateKey),
-                  outError))
-        return NO;
+    if (@available(macOS 12.00, iOS 15, *)) {
+        CFErrorRef error;
+        *privateKey = SecKeyCreateRandomKey((__bridge CFDictionaryRef)pairAttrs, &error);
+        if (!privateKey) {
+            Warn(@"generateRSAKeyPair: SecKeyCreateRandomKey failed %@", ((__bridge NSError*)error).description);
+            MYReturnError(outError, (int)((__bridge NSError*)error).code,
+                          @"SecKeyCreateRandomKey", @"SecKeyCreateRandomKey failed");
+            return NO;
+        }
+        *publicKey = SecKeyCopyPublicKey(*privateKey);
+    } else {
+        if (!checkErr(SecKeyGeneratePair((__bridge CFDictionaryRef)pairAttrs, publicKey, privateKey),
+                      outError))
+            return NO;
+    }
+    
     CFAutorelease(*publicKey);
     CFAutorelease(*privateKey);
     return YES;
@@ -213,12 +226,24 @@ static void removePublicKey(SecKeyRef publicKey) {
 
 // Signs a data blob using a private key. Padding is PKCS1 with SHA-1 digest.
 static NSData* signData(SecKeyRef privateKey, NSData* inputData) {
+    if (@available(macOS 10.12, iOS 10.0, *)) {
+        CFErrorRef error;
+        CFDataRef data = SecKeyCreateSignature(privateKey,
+                                               kSecKeyAlgorithmRSASignatureDigestPKCS1v15SHA1,
+                                               (__bridge CFDataRef)inputData, &error);
+        if (!data) {
+            Warn(@"signData failed: %@", ((__bridge NSError*)error).description);
+            return nil;
+        }
+        return (__bridge NSData *)data;
+    }
 #if TARGET_OS_IPHONE
     uint8_t digest[CC_SHA1_DIGEST_LENGTH];
     CC_SHA1(inputData.bytes, (CC_LONG)inputData.length, digest);
-
+    
     size_t sigLen = 1024;
     uint8_t sigBuf[sigLen];
+    
     OSStatus err = SecKeyRawSign(privateKey, kSecPaddingPKCS1SHA1,
                                  digest, sizeof(digest),
                                  sigBuf, &sigLen);
@@ -227,7 +252,6 @@ static NSData* signData(SecKeyRef privateKey, NSData* inputData) {
         return nil;
     }
     return [NSData dataWithBytes: sigBuf length: sigLen];
-
 #else
     SecTransformRef transform = SecSignTransformCreate(privateKey, NULL);
     if (!transform)
@@ -236,8 +260,8 @@ static NSData* signData(SecKeyRef privateKey, NSData* inputData) {
     if (SecTransformSetAttribute(transform, kSecDigestTypeAttribute, kSecDigestSHA1, NULL)
         && SecTransformSetAttribute(transform, kSecTransformInputAttributeName,
                                     (__bridge CFDataRef)inputData, NULL)) {
-            resultData = CFBridgingRelease(SecTransformExecute(transform, NULL));
-        }
+        resultData = CFBridgingRelease(SecTransformExecute(transform, NULL));
+    }
     CFRelease(transform);
     return resultData;
 #endif
